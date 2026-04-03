@@ -839,7 +839,7 @@ function teletypeBeep() {
   var t = ac.currentTime;
   env.gain.setValueAtTime(0, t);
   var isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-var peakGain = isMobile ? 0.26 : 0.12;
+var peakGain = isMobile ? 0.24 : 0.12;
 env.gain.linearRampToValueAtTime(peakGain, t + 0.002);
   env.gain.exponentialRampToValueAtTime(0.0001, t + 0.018);
 
