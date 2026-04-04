@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MISSION: AETHER — UNIT: VESTA — CMD: REN ISHII</title>
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* ─── DESIGN TOKENS ─────────────────────────────────────── */
+:root {
+  --g:    #00FF41;
+  --gdim: #00CC33;
+  --gdk:  #003D10;
+  --gfnt: rgba(0,255,65,0.055);
+  --r:    #FF2222;
+  --amb:  #FF9900;
+  --ambdim: #CC7700;
+  --ambfnt: rgba(255,153,0,0.08);
+  --c1: var(--g);
+  --c2: var(--gdim);
+  --c3: var(--gdk);
+  --cfnt: var(--gfnt);
+}
+.em { --c1:var(--amb); --c2:var(--ambdim); --c3:#3D2600; --cfnt:var(--ambfnt); }
+
+/* ─── RESET & BASE ──────────────────────────────────────── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: #000;
+  color: var(--c1);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  overflow-x: hidden;
+  min-height: 100vh;
+  cursor: crosshair;
+  transition: color .8s;
+}
+
+/* CRT scanlines */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent, transparent 2px,
+    rgba(0,0,0,0.13) 2px, rgba(0,0,0,0.13) 3px
+  );
+  pointer-events: none;
+  z-index: 9997;
+  animation: scanroll 10s linear infinite;
+}
+/* Vignette */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.7) 100%);
+  pointer-events: none;
+  z-index: 9996;
+}
+
+/* ─── KEYFRAMES ─────────────────────────────────────────── */
+@keyframes scanroll  { from{background-position:0 0} to{background-position:0 80px} }
+@keyframes flicker   { 0%,100%{opacity:1} 93%{opacity:.87} 94%{opacity:1} 97%{opacity:.92} 98%{opacity:1} }
+@keyframes blink     { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+@keyframes glow-p    { 0%,100%{text-shadow:0 0 7px var(--c1),0 0 16px var(--c1)} 50%{text-shadow:0 0 18px var(--c1),0 0 36px var(--c2),0 0 52px var(--c2)} }
+@keyframes ecg-s     { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+@keyframes rblink    { 0%,100%{color:#FF2222;opacity:1} 50%{color:#FF6666;opacity:.58} }
+@keyframes ablink    { 0%,100%{color:#FF9900;opacity:1} 50%{color:#FFCC66;opacity:.65} }
+@keyframes sdrift    { 0%{background-position:0 0} 25%{background-position:130px 45px} 50%{background-position:55px 115px} 75%{background-position:190px 35px} 100%{background-position:0 0} }
+@keyframes glitch-f  {
+  0%{transform:translate(0);filter:none;clip-path:none}
+  15%{transform:translate(-3px,1px);filter:hue-rotate(90deg) brightness(2);clip-path:inset(12% 0 42% 0)}
+  30%{transform:translate(3px,-2px);filter:none;clip-path:inset(58% 0 8% 0)}
+  45%{transform:translate(0);clip-path:none}
+  62%{transform:translate(-1px,2px);filter:brightness(1.7)}
+  80%{transform:translate(0);filter:none}
+  100%{transform:translate(0);filter:none;clip-path:none}
+}
+@keyframes vg        { 0%{opacity:1} 20%{opacity:0} 22%{opacity:1} 60%{opacity:1} 62%{opacity:0} 64%{opacity:1} }
+@keyframes boot-in   { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+@keyframes splash-out{ from{opacity:1} to{opacity:0;pointer-events:none} }
+@keyframes connect-pulse {
+  0%,100%{box-shadow:0 0 12px rgba(0,255,65,.25),inset 0 0 10px rgba(0,255,65,.06)}
+  50%{box-shadow:0 0 28px rgba(0,255,65,.5),inset 0 0 18px rgba(0,255,65,.12)}
+}
+
+/* ─── BOOT SPLASH ───────────────────────────────────────── */
+#boot-splash {
+  position: fixed; inset: 0; z-index: 19000;
+  background: #000;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 28px;
+  transition: opacity .8s ease;
+}
+#boot-splash.fade-out { opacity: 0; pointer-events: none; }
+
+.splash-logo {
+  font-family: 'VT323', monospace;
+  font-size: clamp(42px, 8vw, 72px);
+  letter-spacing: 8px;
+  color: var(--g);
+  text-shadow: 0 0 20px var(--g), 0 0 40px var(--gdim), 0 0 80px rgba(0,255,65,.3);
+  animation: glow-p 3s ease-in-out infinite;
+  text-align: center;
+}
+.splash-sub {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 4px;
+  color: var(--gdim);
+  text-align: center;
+  opacity: .7;
+}
+.splash-signal {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 3px;
+  color: var(--g);
+  text-align: center;
+  text-shadow: 0 0 8px var(--g);
+}
+.splash-signal .cur { animation: blink 1s infinite; }
+
+.splash-divider {
+  width: min(380px, 80vw);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gdim), transparent);
+  opacity: .45;
+}
+
+#init-btn {
+  background: transparent;
+  border: 1px solid var(--g);
+  color: var(--g);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 14px;
+  letter-spacing: 5px;
+  padding: 14px 40px;
+  cursor: pointer;
+  text-shadow: 0 0 10px var(--g);
+  animation: connect-pulse 2.4s ease-in-out infinite;
+  transition: all .15s;
+  margin-top: 8px;
+}
+#init-btn:hover {
+  background: rgba(0,255,65,.1);
+  letter-spacing: 6px;
+}
+#init-btn:active { transform: scale(.97); }
+
+.splash-note {
+  font-size: 10px;
+  color: var(--gdim);
+  letter-spacing: 3px;
+  opacity: .4;
+  text-align: center;
+}
+
+/* ─── MAIN DASHBOARD ────────────────────────────────────── */
+#dashboard {
+  opacity: 0;
+  transition: opacity 1s ease;
+  pointer-events: none;
+}
+#dashboard.live { opacity: 1; pointer-events: all; }
+
+.wrap { max-width: 1120px; margin: 0 auto; padding: 14px; animation: flicker 9s infinite; }
+
+/* Header */
+.hdr {
+  border: 1px solid var(--c2); border-bottom: none;
+  padding: 12px 18px; background: var(--cfnt);
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 8px;
+  transition: border-color .8s, background .8s;
+}
+.hdr-t {
+  font-family: 'VT323', monospace; font-size: 26px; letter-spacing: 3px;
+  color: var(--c1); text-shadow: 0 0 8px var(--c1), 0 0 16px var(--c2);
+  animation: glow-p 4s ease-in-out infinite;
+}
+.hdr-s { font-size: 10px; color: var(--c2); letter-spacing: 2px; margin-top: 3px; transition: color .8s; }
+.srow  { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--c1); }
+.sdot  { width: 7px; height: 7px; border-radius: 50%; background: var(--c1); box-shadow: 0 0 6px var(--c1); animation: blink 2s infinite; transition: background .5s, box-shadow .5s; }
+
+/* Grid */
+.row { display: grid; border: 1px solid var(--c2); border-top: none; transition: border-color .8s; }
+.r2  { grid-template-columns: 1fr 1fr; }
+.r3  { grid-template-columns: 1fr 1fr 1fr; }
+.p   { border-right: 1px solid var(--c2); border-bottom: 1px solid var(--c2); padding: 13px 15px; background: var(--cfnt); overflow: hidden; position: relative; transition: border-color .8s, background .8s; }
+.p:last-child { border-right: none; }
+
+/* Panel title */
+.pt { font-size: 10px; letter-spacing: 3px; color: var(--c2); margin-bottom: 9px; display: flex; align-items: center; gap: 5px; transition: color .8s; }
+.pt::before { content: '//'; opacity: .4; }
+
+/* MET */
+.met   { font-family: 'VT323', monospace; font-size: 22px; letter-spacing: 2px; line-height: 1; color: var(--c1); text-shadow: 0 0 10px var(--c1), 0 0 22px var(--c2); }
+.met-sol { font-family: 'VT323', monospace; font-size: 50px; letter-spacing: 4px; line-height: 1; color: var(--c1); text-shadow: 0 0 12px var(--c1), 0 0 28px var(--c2); }
+.met-l { font-size: 10px; color: var(--c2); letter-spacing: 3px; margin-top: 3px; }
+.pb-bg   { width: 100%; height: 5px; background: rgba(0,255,65,.07); border: 1px solid var(--c3); margin-top: 10px; }
+.pb-fill { height: 100%; background: var(--c1); box-shadow: 0 0 6px var(--c1); transition: width 1s linear; }
+.pb-l    { font-size: 10px; color: var(--c2); letter-spacing: 1px; margin-top: 3px; }
+
+/* Canvas */
+#traj { width: 100%; height: 155px; display: block; }
+
+/* Telemetry */
+.tv { font-family: 'VT323', monospace; font-size: 38px; line-height: 1; color: var(--c1); text-shadow: 0 0 8px var(--c1); }
+.tu { font-size: 10px; color: var(--c2); letter-spacing: 2px; margin-top: 2px; }
+
+/* Vitals */
+.bpm   { font-family: 'VT323', monospace; font-size: 44px; color: var(--c1); text-shadow: 0 0 8px var(--c1); }
+.ecg-w { width: 100%; height: 75px; overflow: hidden; margin: 8px 0; }
+.ecg-svg { height: 75px; display: block; animation: ecg-s 3.6s linear infinite; }
+.vs { font-size: 11px; letter-spacing: 3px; margin-top: 5px; color: var(--c1); }
+.vd { font-size: 10px; color: var(--c2); letter-spacing: 1px; margin-top: 4px; }
+
+/* Terminal */
+.tlog { height: 175px; overflow-y: auto; font-size: 12px; line-height: 1.75; color: var(--c1); scrollbar-width: thin; scrollbar-color: var(--c2) transparent; }
+.tlog::-webkit-scrollbar { width: 3px; }
+.tlog::-webkit-scrollbar-thumb { background: var(--c2); }
+.tlog .ts  { color: var(--c2); margin-right: 7px; }
+.tlog .kai { color: #FFAA00; margin-right: 5px; }
+.tcursor   { display: inline-block; width: 8px; height: 13px; background: var(--c1); animation: blink 1s infinite; vertical-align: middle; }
+
+/* Buttons */
+.boost {
+  background: transparent; border: 1px solid var(--c1); color: var(--c1);
+  font-family: 'Share Tech Mono', monospace; font-size: 12px; letter-spacing: 3px;
+  padding: 9px 18px; cursor: pointer; width: 100%; margin-top: 9px;
+  text-shadow: 0 0 6px var(--c1);
+  box-shadow: 0 0 10px rgba(0,255,65,.14), inset 0 0 8px rgba(0,255,65,.04);
+  transition: all .15s;
+}
+.boost:hover  { background: rgba(0,255,65,.08); box-shadow: 0 0 20px rgba(0,255,65,.35); }
+.boost:active { transform: scale(.98); }
+#bmsg { font-size: 11px; color: #FFAA00; letter-spacing: .5px; min-height: 30px; margin-top: 5px; line-height: 1.65; white-space: pre-line; }
+
+/* Signal Lost overlay */
+#sig-ov { display: none; position: fixed; inset: 0; z-index: 9000; }
+#sig-ov.on { display: block; }
+.sl { position: absolute; inset: 0; opacity: .65; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.45'/%3E%3C/svg%3E"); background-size: 200px; animation: sdrift .08s steps(1) infinite; }
+.sc  { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: rgba(0,0,0,.78); }
+.sm  { font-family: 'VT323', monospace; font-size: 34px; text-align: center; animation: rblink .8s infinite; letter-spacing: 2px; max-width: 680px; padding: 0 20px; line-height: 1.3; }
+.ss  { font-size: 12px; color: #FF6666; letter-spacing: 2px; text-align: center; line-height: 1.9; max-width: 560px; padding: 0 16px; }
+.swl { font-size: 11px; color: #FFAA00; letter-spacing: 2px; text-align: center; }
+.swv { font-family: 'VT323', monospace; font-size: 32px; color: #FFAA00; text-shadow: 0 0 8px #FFAA00; letter-spacing: 4px; text-align: center; }
+
+/* Emergency banner */
+#emg-b { display: none; border: 1px solid var(--amb); border-top: none; background: rgba(255,153,0,.07); padding: 8px 18px; text-align: center; }
+#emg-b.on { display: block; }
+.emgt { font-family: 'VT323', monospace; font-size: 20px; letter-spacing: 4px; animation: ablink .7s infinite; }
+
+/* Glitch helpers */
+.glitching { animation: glitch-f .3s steps(1) 2 !important; }
+.vg        { animation: vg .25s steps(1) 3; }
+
+@media (max-width: 680px) {
+  .r2, .r3 { grid-template-columns: 1fr; }
+  .met-sol  { font-size: 34px; }
+  .hdr-t    { font-size: 18px; }
+  .splash-logo { font-size: 38px; letter-spacing: 5px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════
+     MANUAL CONTROL FLAGS
+     MANUAL_OFFLINE   = true  → signal lost overlay
+     MANUAL_EMERGENCY = true  → amber palette + ANOMALY
+══════════════════════════════════════════════════════ -->
+<script>
+var MANUAL_OFFLINE   = false;
+var MANUAL_EMERGENCY = false;
+</script>
+
+<!-- ═══════════════════════════════════════════════════════
+     BOOT SPLASH SCREEN
+════════════════════════════════════════════════════════ -->
+<div id="boot-splash">
+  <div class="splash-logo">✦ AETHER ✦</div>
+  <div class="splash-sub">DEEP SPACE TELEMETRY SYSTEM &nbsp;·&nbsp; NODE 7 &nbsp;·&nbsp; v4.7</div>
+  <div class="splash-divider"></div>
+  <div class="splash-signal">
+    [ SIGNAL DETECTED FROM VESTA ]&nbsp;<span class="cur">█</span>
+  </div>
+  <div class="splash-sub" style="font-size:10px;opacity:.5;">
+    UNIT: VESTA &nbsp;·&nbsp; CMD: REN ISHII &nbsp;·&nbsp; MISSION: AETHER
+  </div>
+  <button id="init-btn" onclick="initializeUplink()">[ INITIALIZE AUDIO UPLINK ]</button>
+  <div class="splash-note">REQUIRES USER INTERACTION TO ACTIVATE AUDIO</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     MAIN DASHBOARD
+════════════════════════════════════════════════════════ -->
+<div id="dashboard">
+<div class="wrap" id="wrap">
+
+  <!-- HEADER -->
+  <div class="hdr">
+    <div>
+      <div class="hdr-t">MISSION: AETHER &nbsp;│&nbsp; UNIT: VESTA &nbsp;│&nbsp; CMD: REN ISHII</div>
+      <div class="hdr-s">DEEP SPACE TELEMETRY UPLINK v4.7 &nbsp;·&nbsp; EARTH-RELAY NODE 7 &nbsp;·&nbsp; <span id="sol-hdr">SOL –</span></div>
+    </div>
+    <div style="text-align:right;">
+      <div class="srow"><span class="sdot" id="sdot"></span><span id="stxt">UPLINK ACTIVE</span></div>
+      <div class="hdr-s" style="margin-top:4px;" id="utc-clock">–</div>
+    </div>
+  </div>
+
+  <!-- EMERGENCY BANNER -->
+  <div id="emg-b"><span class="emgt">⚠ ANOMALY DETECTED — MISSION STATUS DEGRADED — AWAIT K.A.I. ASSESSMENT ⚠</span></div>
+
+  <!-- ROW 1: MET + TRAJECTORY -->
+  <div class="row r2">
+    <div class="p">
+      <div class="pt">MISSION ELAPSED TIME</div>
+      <!-- SOL counter — primary large number -->
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px;">
+        <div style="font-size:10px;color:var(--c2);letter-spacing:3px;margin-top:2px;">MISSION DAY:</div>
+        <div class="met-sol" id="sol-big">–</div>
+        <div style="font-size:10px;color:var(--c2);letter-spacing:2px;margin-top:6px;">SOL</div>
+      </div>
+      <!-- HH:MM:SS sub-counter -->
+      <div class="met" id="met-hms">00:00:00</div>
+      <div class="met-l">HRS &nbsp;&nbsp; MIN &nbsp;&nbsp; SEC &nbsp;(UTC)</div>
+      <!-- Progress -->
+      <div class="pb-l" style="margin-top:12px;letter-spacing:2px;">TRANSIT PROGRESS — EARTH → MARS ORBIT</div>
+      <div class="pb-bg"><div class="pb-fill" id="pbar" style="width:0%"></div></div>
+      <div class="pb-l" id="pbl">COMPUTING...</div>
+    </div>
+    <div class="p" style="border-right:none;">
+      <div class="pt">TRAJECTORY — INNER SOLAR SYSTEM</div>
+      <canvas id="traj" height="155"></canvas>
+    </div>
+  </div>
+
+  <!-- ROW 2: TELEMETRY -->
+  <div class="row r3">
+    <div class="p">
+      <div class="pt">DISTANCE TO MARS</div>
+      <div class="tv" id="dist">–</div>
+      <div class="tu">× 10⁶ KM</div>
+    </div>
+    <div class="p">
+      <div class="pt">VESSEL VELOCITY</div>
+      <div class="tv" id="vel">–</div>
+      <div class="tu">KM / H</div>
+    </div>
+    <div class="p" style="border-right:none;">
+      <div class="pt">SIGNAL LATENCY</div>
+      <div class="tv" id="lat">–</div>
+      <div class="tu" id="latu">SECONDS ONE-WAY</div>
+    </div>
+  </div>
+
+  <!-- ROW 3: VITALS + KAI TERMINAL -->
+  <div class="row r2" style="border-bottom:1px solid var(--c2);">
+    <div class="p" style="border-bottom:none;">
+      <div class="pt">BIOMETRIC MONITOR — CDR. REN ISHII</div>
+      <div style="display:flex;align-items:baseline;gap:10px;">
+        <div class="bpm" id="bpm">58</div>
+        <div><div class="tu">BPM CARDIAC</div></div>
+      </div>
+      <div class="ecg-w">
+        <svg class="ecg-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 75" preserveAspectRatio="none">
+          <defs>
+            <filter id="eg">
+              <feGaussianBlur stdDeviation="1.5" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <polyline id="epts" fill="none" stroke="#00FF41" stroke-width="1.6" filter="url(#eg)" points=""/>
+        </svg>
+      </div>
+      <div class="vs" id="vstatus">◈ STATUS: DEEP STASIS &nbsp;/&nbsp; STABLE &nbsp;<span style="animation:blink 2s infinite;display:inline-block;">█</span></div>
+      <div class="vd">CABIN TEMP: 3.8 °C &nbsp;│&nbsp; CORE TEMP: −2.1 °C &nbsp;│&nbsp; CRYO PRESSURE: NOMINAL</div>
+    </div>
+    <div class="p" style="border-right:none;border-bottom:none;">
+      <div class="pt">K.A.I. — KINETIC AUTONOMOUS INTELLIGENCE</div>
+      <div class="tlog" id="tlog"></div>
+      <span class="tcursor"></span>
+      <button class="boost" onclick="doBoost()">⬡ SIGNAL BOOST ATTEMPT</button>
+      <div id="bmsg"></div>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+</div><!-- /dashboard -->
+
+<!-- SIGNAL LOST OVERLAY -->
+<div id="sig-ov">
+  <div class="sl"></div>
+  <div class="sc">
+    <div style="font-family:'VT323',monospace;font-size:15px;letter-spacing:6px;animation:rblink .5s infinite;">⚠ UNIT: VESTA — AETHER UPLINK ⚠</div>
+    <div class="sm">[CRITICAL] INTERSTELLAR INTERFERENCE: 98%<br>BANDWIDTH INSUFFICIENT FOR TELEMETRY</div>
+    <div class="ss">
+      AETHER-RELAY SIGNAL CORRUPTED<br>
+      CARRIER WAVE FRAGMENTED — DEEP SPACE NODE 7 UNRESPONSIVE<br>
+      CDR. REN ISHII STATUS: UNCONFIRMED PENDING REACQUISITION
+    </div>
+    <div class="swl">NEXT COMMUNICATION WINDOW IN:</div>
+    <div class="swv" id="wtimer">–</div>
+    <div class="swl" style="font-size:10px;">EARTH-COMMS WINDOW OPENS 10:00 UTC · NODE 7 PRIORITY RESET</div>
+    <div class="swl" style="font-size:10px;color:#888;margin-top:4px;">[EARTH-COMMS: NODE 7 PRIORITY RESET PENDING]</div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+//  MISSION CONSTANTS — all times in UTC
+// ════════════════════════════════════════════════════════
+// Launch: 28 March 2026 01:40 UTC
+var LAUNCH  = new Date(Date.UTC(2026, 2, 28, 1, 40, 0));   // month is 0-indexed
+// Arrival: 1 December 2026 00:00 UTC
+var ARRIVAL = new Date(Date.UTC(2026, 11, 1, 0, 0, 0));
+var TOTAL   = ARRIVAL - LAUNCH;
+
+// ─── MISSION CHRONOLOGY — Bilingual EN/JP (250-day adapted from MSL Curiosity) ───
+// Format: 'Mission Milestone. / ミッションのマイルストーン。'
+// Sol numbering: 1-indexed. Launch = Sol 1. ARRIVAL = Sol 250 (Dec 1, 2026).
+// ─── MISSION CHRONOLOGY ──────────────────────────────────
+// 56 entries · EN/JP bilingual · Real MSL/Curiosity data + AETHER adaptations
+// Real MSL cruise: 253 days (Nov 26 2011–Aug 6 2012), compressed to 250 by
+// removing 3 mid-cruise sols (MSL 126–128 → not mapped). All RAD values,
+// TCM dates, SEP events, and instrument checkouts are verified NASA/JPL data.
+// Sources: Zeitlin et al. 2013 (Science), Guo et al. 2015 (A&A),
+//          MSL Navigation Results (ISSFD 2012), PDS instrument host catalog.
+var MISSION_CHRONOLOGY = [
+  // ── LAUNCH & EARLY CRUISE (Sol 1–25) ──────────────────
+  { sol: 1,   text: '[★ REAL] LAUNCH — Atlas V AV-028 lifts off 15:02 UTC. Trans-Mars injection burn complete at 15:41 UTC. / 打ち上げ — アトラスV AV-028が15:02 UTCに離陸。15:41 UTCに火星移行噴射完了。' },
+  { sol: 2,   text: '[★ REAL] Spacecraft spin-stabilized at 2 RPM for cruise. Solar arrays generate power for all systems. / 宇宙船が巡航中2 RPMでスピン安定化。太陽電池が全システムに電力供給。' },
+  { sol: 3,   text: 'Cruise stage thermal control nominal. RTG heat dissipation within design margins for deep space. / 巡航ステージ熱制御正常。深宇宙向け設計マージン内でRTG廃熱を処理。' },
+  { sol: 4,   text: '[★ REAL] MSL departs Earth-Moon gravitational sphere of influence. Heliocentric cruise begins. / MSLが地球・月重力圏を脱出。太陽中心巡航フェーズ開始。' },
+  { sol: 5,   text: 'Low-gain antenna omnidirectional link confirmed. X-band uplink nominal via DSN Goldstone. / 低利得アンテナの全方向リンク確認。DSNゴールドストーン経由Xバンドアップリンク正常。' },
+  { sol: 7,   text: 'MEDLI thermal sensor suite initialized. Entry heating models loaded to flight computer. / MEDLI熱センサースイート初期化。突入加熱モデルを飛行コンピューターにロード。' },
+  { sol: 10,  text: '[★ REAL] RAD powered on — Dec 6, 2011. First-ever radiation measurements from inside an interplanetary spacecraft begin. GCR dose rate: ~1.84 mSv/day. / RAD起動 — 2011年12月6日。惑星間宇宙船内部からの史上初の放射線測定開始。GCR線量率：~1.84 mSv/day。' },
+  { sol: 15,  text: '[★ REAL] RAD baseline established: GCR dose equivalent rate 1.84 ± 0.30 mSv/day inside spacecraft shielding. Quality factor Q = 3.82 ± 0.25. / RADベースライン確立：宇宙船シールド内GCR線量当量率1.84 ± 0.30 mSv/day。品質係数Q = 3.82 ± 0.25。' },
+  { sol: 20,  text: 'Attitude correction turn performed. High-gain antenna realigned to Earth-Mars transfer baseline. / 姿勢修正ターン実施。高利得アンテナを地球-火星移行基準線に再アライン。' },
+  { sol: 26,  text: '[★ REAL] Lateral calibration burn — Dec 22, 2011. ΔV = 0.555 m/s. Underburn: 1.7%. Misspointing: < 0.5°. First translational maneuver of the mission. / 横方向キャリブレーション噴射 — 2011年12月22日。ΔV = 0.555 m/s。アンダーバーン：1.7%。ミスポインティング：< 0.5°。ミッション初の並進マニューバ。' },
+  // ── TCM-1 & SEP EVENTS (Sol 30–100) ──────────────────
+  { sol: 32,  text: 'Navigation team processes post-launch Doppler data. B-plane miss distance estimated at 47,513 km. Correction required. / ナビゲーションチームが打ち上げ後ドップラーデータを処理。B平面ミス距離：47,513 kmと推定。修正が必要。' },
+  { sol: 40,  text: 'Thermal control nominal. Solar array augments RTG during cruise for full instrument power. / 熱制御正常。巡航中、太陽電池がRTGを補助し全機器に電力供給。' },
+  { sol: 46,  text: '[★ REAL] TCM-1 — Jan 11, 2012. Axial burn ΔV 1.585 m/s + lateral ΔV 5.611 m/s. B-plane miss distance reduced from 47,513 km to 4,956 km. Landing time advanced 14 hours. Execution error: +2.3% magnitude. / TCM-1 — 2012年1月11日。軸方向ΔV 1.585 m/s + 横方向ΔV 5.611 m/s。B平面ミス距離を47,513 kmから4,956 kmに低減。着陸時刻を14時間前倒し。' },
+  { sol: 50,  text: '[★ REAL] Post-TCM-1 orbit determination stable. Charged particle Doppler delays estimated and corrected in navigation filter. / TCM-1後の軌道決定が安定。荷電粒子ドップラー遅延を推定しナビゲーションフィルターで補正。' },
+  { sol: 55,  text: '[★ REAL] RAD cumulative dose: ~91 mSv. GCR flux anticorrelated with solar modulation potential Φ. Solar cycle 24 unusually weak. / RAD累積線量：~91 mSv。GCRフラックスは太陽変調ポテンシャルΦと逆相関。太陽サイクル24は異例に弱い。' },
+  { sol: 58,  text: '[★ REAL] SEP Event #1 onset — Jan 23, 2012 (MSL cruise day 58). Solar energetic particle burst detected by RAD. Dose rate spikes above GCR baseline. / SEPイベント#1開始 — 2012年1月23日（MSL巡航58日目）。RADが太陽高エネルギー粒子バーストを検出。線量率がGCRベースラインを超えてスパイク。' },
+  { sol: 64,  text: '[★ REAL] SEP Event #1 ends — Jan 29, 2012. Duration: 6 days. Total dose equivalent from this event: 4.0 mSv. Spacecraft systems nominal throughout. / SEPイベント#1終了 — 2012年1月29日。期間：6日間。このイベントの総線量当量：4.0 mSv。宇宙船システムは全期間正常。' },
+  { sol: 70,  text: '[★ REAL] Low-gain antenna → medium-gain antenna uplink switch — Feb 28, 2012. Tracking data noise decreases. Signal quality improves significantly. / 低利得アンテナ→中利得アンテナのアップリンク切り替え — 2012年2月28日。追跡データノイズが低下。信号品質が大幅に向上。' },
+  { sol: 75,  text: 'Heliocentric distance: 1.22 AU. Solar power nominal. Spin rate maintained at 2 RPM for thermal balance. / 太陽中心距離：1.22 AU。太陽電力正常。熱バランスのためスピン速度2 RPMを維持。' },
+  { sol: 81,  text: '[★ REAL] SEP Event #2 onset — Mar 7, 2012. LARGEST solar particle event of the entire 253-day cruise. Dose rate exceeds 10,000 μGy/day. / SEPイベント#2開始 — 2012年3月7日。253日間の巡航全体で最大の太陽粒子イベント。線量率が10,000 μGy/dayを超過。' },
+  { sol: 88,  text: '[★ REAL] SEP Events #2, #3, #4 (Mar 7–15 cluster): combined dose equivalent 19.5 mSv — largest SEP sequence of the cruise. Forbush decrease suppresses GCR background during events. / SEPイベント#2・3・4（3月7〜15日クラスター）：総線量当量19.5 mSv — 巡航中最大のSEPシーケンス。イベント中、フォーブッシュ減少がGCRバックグラウンドを抑制。' },
+  { sol: 95,  text: 'Propulsion system health check nominal. Eight thrusters in two clusters verified. TCM-2 analysis underway. / 推進システムの健全性チェック正常。2クラスター8スラスター確認済み。TCM-2分析中。' },
+  { sol: 100, text: '[★ REAL] RAD 100-day milestone. Cumulative GCR dose equivalent: ~172 mSv. Average dose rate: 1.75 ± 0.30 mSv/day. Five SEP events recorded so far in cruise. / RAD 100日マイルストーン。GCR累積線量当量：~172 mSv。平均線量率：1.75 ± 0.30 mSv/day。巡航中のSEPイベント：計5件記録。' },
+  // ── INSTRUMENT CHECKOUTS (Sol 107–120) ────────────────
+  { sol: 107, text: '[★ REAL] Science instrument health checkout begins — Mar 12, 2012 (108 days after launch). All 10 science instruments tested over 10 days. / 科学機器の健全性チェックアウト開始 — 2012年3月12日（打ち上げ108日後）。10日間で全10機器をテスト。' },
+  { sol: 110, text: '[★ REAL] Mastcam, MARDI, MAHLI imaging systems checkout complete. All camera systems nominal. / Mastcam、MARDI、MAHLIの撮像システムチェックアウト完了。全カメラシステム正常。' },
+  { sol: 113, text: '[★ REAL] ChemCam, APXS, CheMin, DAN checkout complete. Remote sensing and analytical instruments all nominal. / ChemCam、APXS、CheMin、DANのチェックアウト完了。リモートセンシングと分析機器が全て正常。' },
+  { sol: 116, text: '[★ REAL] Full 10-instrument science suite checkout complete — Mar 22, 2012. All systems healthy after 10-day checkout sequence. / 全10機器科学スイートのチェックアウト完了 — 2012年3月22日。10日間のチェックアウトシーケンス後、全システム健全。' },
+  { sol: 121, text: '[★ REAL] TCM-2 evaluation complete — maneuver not required. Trajectory within nominal corridor. TCM-2 officially waived. / TCM-2評価完了 — マニューバ不要。軌道は正常コリドー内。TCM-2を正式に免除。' },
+  // ── MID-CRUISE (Sol 125–165) ──────────────────────────
+  { sol: 125, text: 'VESTA passes 50% transit completion. Mission elapsed time: 125 days. Distance to Mars decreasing rapidly. / ヴェスタがトランジットの50%を通過。ミッション経過時間：125日。火星との距離が急速に減少中。' },
+  { sol: 126, text: '[★ REAL] MRO (Mars Reconnaissance Orbiter) and Odyssey orbital adjustments confirmed for EDL relay. Both orbiters repositioned for landing communications coverage. / EDL中継のためMROとオデッセイの軌道調整確認。着陸通信カバレッジのため両軌道船を再配置。' },
+  { sol: 131, text: '[★ REAL] Late-cruise imaging checkout — Apr 20, 2012. Mastcam, MARDI, MAHLI and all engineering cameras rechecked. All nominal. / 後期巡航撮像チェックアウト — 2012年4月20日。Mastcam、MARDI、MAHLI、全工学カメラを再確認。全て正常。' },
+  { sol: 135, text: 'Navigation star tracker data merged with Earth-based DSN tracking. Position error < 2.8 km, velocity error < 2 m/s. / ナビゲーション星追跡器データを地上DSN追跡データと統合。位置誤差 < 2.8 km、速度誤差 < 2 m/s。' },
+  { sol: 140, text: '[★ REAL] RAD cumulative dose: ~230 mSv. Anticorrelation between solar modulation Φ and dose rate confirmed with correlation coefficient −0.80. / RAD累積線量：~230 mSv。太陽変調Φと線量率の逆相関が相関係数−0.80で確認。' },
+  { sol: 145, text: '[★ REAL] SEP Event #5 — May 17, 2012. Fifth and final solar particle event of the cruise. Total dose equivalent: 1.2 mSv. All five SEP events total: 24.7 mSv (5% of cruise dose). / SEPイベント#5 — 2012年5月17日。巡航最後の太陽粒子イベント。総線量当量：1.2 mSv。5イベント合計：24.7 mSv（巡航線量の5%）。' },
+  { sol: 150, text: '[★ REAL] APPROACH PHASE begins — 45 days before Mars atmospheric entry. Navigation mode shifts to approach. All instrument preparation begins. / 接近フェーズ開始 — 火星大気突入45日前。ナビゲーションモードが接近フェーズに移行。全機器の準備開始。' },
+  { sol: 155, text: '[★ REAL] Second late-cruise checkout — Jun 14, 2012. Mastcam, MARDI, MAHLI, engineering cameras, and REMS all rechecked. REMS environmental sensors nominal. / 第二後期巡航チェックアウト — 2012年6月14日。Mastcam、MARDI、MAHLI、工学カメラ、REMSを再確認。REMS環境センサー正常。' },
+  { sol: 160, text: '[★ REAL] TCM-3 evaluation — maneuver waived. Entry flight path angle within ±0.05° threshold. Trajectory prediction stable. / TCM-3評価 — マニューバ免除。突入飛行経路角が±0.05°閾値内。軌道予測安定。' },
+  { sol: 163, text: '[★ REAL] SAM instrument checkout — Jun 28, 2012. Sample Analysis at Mars: gas chromatograph, quadrupole mass spectrometer, and tunable laser spectrometer all nominal. / SAM機器チェックアウト — 2012年6月28日。火星試料分析装置：ガスクロマトグラフ、四重極質量分析計、チューナブルレーザー分光計、全て正常。' },
+  // ── APPROACH PHASE (Sol 165–220) ─────────────────────
+  { sol: 168, text: 'Signal latency: 7.2 minutes one-way. DSN Canberra complex assumes primary tracking responsibilities. / 信号遅延：片道7.2分。DSNキャンベラ複合施設が主要追跡責任を引き継ぐ。' },
+  { sol: 175, text: '[★ REAL] Navigation team confirms approach entry state. Position delivery requirement: ±2.8 km. Velocity requirement: ±2 m/s. Both within margins. / ナビゲーションチームが接近突入状態を確認。位置配信要件：±2.8 km。速度要件：±2 m/s。両方マージン内。' },
+  { sol: 180, text: 'Mars enters naked-eye visibility from spacecraft. Approach optical navigation activated. Apparent disk: 0.12 arcminutes. / 宇宙船から火星が肉眼で見えるようになる。光学ナビゲーション起動。見かけの円盤：0.12分角。' },
+  { sol: 185, text: '[★ REAL] RAD reconfigured for late-cruise charged particle spectrum measurements Jun 11–Jul 14, 2012. Detailed energy spectra derived for low-Z stopping particles. / RADを2012年6月11日〜7月14日の後期巡航荷電粒子スペクトル測定用に再構成。低Z制動粒子の詳細エネルギースペクトルを導出。' },
+  { sol: 190, text: 'Signal latency: 9.1 minutes one-way. Total accumulated radiation dose: ~335 mSv. All mission systems nominal. / 信号遅延：片道9.1分。総累積放射線量：~335 mSv。全ミッションシステム正常。' },
+  { sol: 197, text: '[★ REAL] EDL software and entry parameter final uplink complete. Sky crane descent algorithm, guided entry logic, and parachute deploy thresholds all armed and locked. / EDLソフトウェアと突入パラメータの最終アップリンク完了。スカイクレーン降下アルゴリズム、ガイダンス突入ロジック、パラシュート展開閾値が全て有効化・固定。' },
+  { sol: 200, text: '[★ REAL] TCM-4 executed — Jul 26, 2012. Entry corridor refinement burn. Final entry flight path angle locked: −15.5° ± 0.1°. / TCM-4実行 — 2012年7月26日。突入コリドー精密化噴射。最終突入飛行経路角固定：-15.5° ± 0.1°。' },
+  { sol: 205, text: '[★ REAL] TCM-5 executed — Jul 28, 2012 (8 days before landing). Final trajectory correction. Entry state calculated 36 hours later — no update required. Trajectory perfect. / TCM-5実行 — 2012年7月28日（着陸8日前）。最終軌道修正。36時間後に突入状態計算 — 更新不要。軌道は完璧。' },
+  { sol: 210, text: '[★ REAL] TCM-6 evaluation — WAIVED. Mission design allowed 6 maneuver opportunities; only 4 were needed. Unprecedented navigation accuracy achieved. / TCM-6評価 — 免除。ミッション設計では6回の機会を想定していたが、必要だったのは4回のみ。前例のない航法精度を達成。' },
+  { sol: 215, text: 'Signal latency: 13.8 minutes one-way. Communications with Earth require pre-planned sequences. Autonomous systems fully armed. / 信号遅延：片道13.8分。地球との通信は事前計画シーケンスが必要。自律システムが完全に有効化。' },
+  // ── PRE-EDL & EDL (Sol 220–250) ──────────────────────
+  { sol: 218, text: '[★ REAL] RAD powered down in preparation for EDL — Jul 14, 2012. Final cruise dose recorded: 466 mSv total equivalent over 230 days of measurement. / EDL準備のためRAD停止 — 2012年7月14日。最終巡航線量を記録：230日間の測定で総計466 mSv当量。' },
+  { sol: 222, text: '[★ REAL] Mars gravitational sphere of influence entry — Aug 4, 2012. Spacecraft on hyperbolic Mars approach trajectory. Inclination: 5.1°. Periares: −64 km. / 火星重力圏突入 — 2012年8月4日。宇宙船が双曲線火星接近軌道に。傾斜角：5.1°。近火点：-64 km。' },
+  { sol: 230, text: 'Entry heating model final validation. Peak aeroshell surface temperature: 1,600°C. Ablative heat shield rated for this profile. / 突入加熱モデルの最終検証。エアロシェル表面最高温度：1,600°C。アブレーション型ヒートシールドはこのプロファイルに対して定格済み。' },
+  { sol: 238, text: '[★ REAL] Cruise balance masses ejected — two 75 kg tungsten weights separated from aeroshell to induce aerodynamic lift for guided entry. / 巡航バランスマスを排出 — 75 kgのタングステン錘2個をエアロシェルから分離し、ガイダンス突入のための空力揚力を誘起。' },
+  { sol: 240, text: 'All EDL systems armed and verified. Final pre-separation systems check complete. All buses green. / 全EDLシステムが有効化・確認済み。最終分離前システムチェック完了。全バス異常なし。' },
+  { sol: 244, text: '[★ REAL] CRUISE STAGE SEPARATION — Entry vehicle autonomous. Cable cutter fires. Cruise stage diverted to burn up in Martian atmosphere. Sky crane systems armed. / 巡航ステージ分離 — 突入機体が自律動作。ケーブルカッター作動。巡航ステージは火星大気での燃焼軌道に転向。スカイクレーンシステム有効化。' },
+  { sol: 245, text: '[★ REAL] Entry vehicle despins. Turn-to-entry maneuver executed. Final telemetry burst transmitted to Earth via bent-pipe relay through Odyssey and MRO. / 突入機体のスピン停止。突入ターンマニューバ実行。オデッセイとMROを経由したベントパイプ中継で最終テレメトリバーストを地球に送信。' },
+  { sol: 246, text: '[★ REAL] Six 25 kg tungsten ballast masses ejected from aeroshell. Center of mass shifted from −4.5 cm to 0 cm to configure for pure ballistic descent after guided entry. / エアロシェルから25 kgのタングステンバラストマス6個を排出。重心を−4.5 cmから0 cmにシフトし、ガイダンス突入後の純粋な弾道降下に形態を移行。' },
+  { sol: 247, text: '[★ REAL] Atmospheric entry interface reached at 125 km altitude at 05:10 UTC. Entry speed: 5.9 km/s. Guided descent mode engaged. Onboard computer executing pre-programmed EDL sequence. / 高度125 kmで大気突入界面に到達（05:10 UTC）。突入速度：5.9 km/s。ガイダンス降下モード起動。機上コンピューターが事前プログラムされたEDLシーケンスを実行中。' },
+  { sol: 248, text: '[★ REAL] PEAK HEATING — Aeroshell surface reaches 1,600°C. MEDLI records thermal and pressure data for future mission planning. Parachute deployment at Mach 1.7, altitude 11 km. / 最高加熱 — エアロシェル表面が1,600°Cに到達。MEDLIが将来のミッション計画のために熱・圧力データを記録。マッハ1.7、高度11 kmでパラシュート展開。' },
+  { sol: 249, text: '[★ REAL] Heatshield separation. MARDI descent camera begins recording. Powered descent ignition. Sky crane lowers rover on tether at 7.5 m below descent stage. Touchdown confirmed 05:17:57 UTC. / ヒートシールド分離。MARDI降下カメラが記録開始。動力降下点火。スカイクレーンが降下ステージの7.5 m下でテザーを使ってローバーを降下。着陸確認：05:17:57 UTC。' },
+  { sol: 250, text: '[★ REAL] TOUCHDOWN — VESTA lands at coordinates 4.5895°S, 137.4417°E. Landing ellipse accuracy: 2.4 km from target center. 563,270,400 km journey complete. MISSION AETHER: ARRIVAL CONFIRMED. / 着陸 — ヴェスタが座標4.5895°S、137.4417°Eに着陸。着陸楕円精度：目標中心から2.4 km。563,270,400 kmの旅程完了。ミッションエーテル：到着確認。' }
+];
+
+// Helper: returns the most recent mission milestone for the current sol
+function getMilestone() {
+  var sol = getMET().d + 1;
+  var result = null;
+  for (var i = 0; i < MISSION_CHRONOLOGY.length; i++) {
+    if (MISSION_CHRONOLOGY[i].sol <= sol) result = MISSION_CHRONOLOGY[i];
+  }
+  return result;
+}
+
+// Telemetry ranges
+var DIST_START = 225.0;    // ×10⁶ km at launch (average Earth–Mars approach)
+var DIST_END   = 0.0;      // ×10⁶ km on arrival
+var LAT_START  = 3.5;      // seconds at launch
+var LAT_END    = 1200.0;   // ~20 min at arrival
+
+// Signal lost window — UTC hours
+var SIG_START_UTC = 5;     // 02:00 ARG = 05:00 UTC
+var SIG_END_UTC   = 9;     // 06:00 ARG = 09:00 UTC
+var WIN_HOUR_UTC  = 13;    // 10:00 ARG = 13:00 UTC
+
+// ─── HELPERS ─────────────────────────────────────────────
+function pad(n, l) { return String(Math.floor(n)).padStart(l || 2, '0'); }
+function lerp(a, b, t) { return a + (b - a) * Math.max(0, Math.min(1, t)); }
+
+function getMET() {
+  var el = Math.max(0, Date.now() - LAUNCH.getTime());
+  return {
+    d:  Math.floor(el / 86400000),
+    h:  Math.floor(el / 3600000) % 24,
+    m:  Math.floor(el / 60000)   % 60,
+    s:  Math.floor(el / 1000)    % 60,
+    ms: el
+  };
+}
+
+function getProg() {
+  return Math.max(0, Math.min(1, (Date.now() - LAUNCH.getTime()) / TOTAL));
+}
+
+// ─── ECG WAVEFORM ────────────────────────────────────────
+(function buildECG() {
+  var cycle = [
+    [0,37],[8,37],[12,35],[14,40],[16,18],[18,52],[20,37],[28,37],
+    [30,35],[32,39],[36,37],[55,37],[57,35],[59,40],[61,37],[100,37]
+  ];
+  var pts = [];
+  for (var r = 0; r < 8; r++) {
+    cycle.forEach(function(p) { pts.push([p[0] + r * 100, p[1]]); });
+  }
+  var a = pts.map(function(p) { return p[0] + ',' + p[1]; }).join(' ');
+  var b = pts.map(function(p) { return (p[0] + 800) + ',' + p[1]; }).join(' ');
+  document.getElementById('epts').setAttribute('points', a + ' ' + b);
+})();
+
+// ─── TRAJECTORY CANVAS ───────────────────────────────────
+function drawTraj() {
+  var cv  = document.getElementById('traj');
+  var ctx = cv.getContext('2d');
+  cv.width  = cv.offsetWidth || 500;
+  cv.height = 155;
+  var W = cv.width, H = cv.height;
+  var em = isEmergencyMode;
+  ctx.clearRect(0, 0, W, H);
+
+  var col = em ? '#FF9900' : '#00FF41';
+  var dim = em ? '#CC7700' : '#00CC33';
+
+  // Stars
+  for (var i = 0; i < 50; i++) {
+    ctx.fillStyle = 'rgba(' + (em ? '255,180,50' : '0,255,65') + ',' + (0.08 + Math.abs(Math.sin(i * 73)) * .13) + ')';
+    ctx.fillRect((Math.sin(i * 137.5) * .5 + .5) * W, (Math.cos(i * 97.3) * .5 + .5) * H, 1, 1);
+  }
+
+  var eX = 28, mX = W - 28, cY = H / 2, arc = -38;
+
+  // Dashed arc
+  ctx.beginPath();
+  ctx.strokeStyle = 'rgba(' + (em ? '255,153,0' : '0,255,65') + ',0.2)';
+  ctx.lineWidth = 1; ctx.setLineDash([4, 5]);
+  ctx.moveTo(eX, cY);
+  ctx.bezierCurveTo(eX + (mX - eX) * .3, cY + arc, eX + (mX - eX) * .7, cY + arc, mX, cY);
+  ctx.stroke(); ctx.setLineDash([]);
+
+  // Earth
+  ctx.beginPath(); ctx.arc(eX, cY, 11, 0, Math.PI * 2);
+  ctx.fillStyle = '#001A00'; ctx.fill();
+  ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = col; ctx.font = '8px Share Tech Mono'; ctx.textAlign = 'center';
+  ctx.fillText('EARTH', eX, cY + 23);
+
+  // Mars
+  ctx.beginPath(); ctx.arc(mX, cY, 9, 0, Math.PI * 2);
+  ctx.fillStyle = '#1A0000'; ctx.fill();
+  ctx.strokeStyle = '#FF4444'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = '#FF4444'; ctx.fillText('MARS', mX, cY + 23);
+
+  // VESTA position
+  var t = getProg();
+  function bx(t) { var p0=eX,p1=eX+(mX-eX)*.3,p2=eX+(mX-eX)*.7,p3=mX; return Math.pow(1-t,3)*p0+3*Math.pow(1-t,2)*t*p1+3*(1-t)*t*t*p2+t*t*t*p3; }
+  function by(t) { var p0=cY,p1=cY+arc,p2=cY+arc,p3=cY; return Math.pow(1-t,3)*p0+3*Math.pow(1-t,2)*t*p1+3*(1-t)*t*t*p2+t*t*t*p3; }
+
+  // Thrust trail
+  for (var i = 1; i <= 6; i++) {
+    var tt = Math.max(0, t - i * .008);
+    ctx.beginPath(); ctx.arc(bx(tt), by(tt), 1.2, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(' + (em ? '255,153,0' : '0,255,65') + ',' + (.18 - i * .026) + ')';
+    ctx.fill();
+  }
+  var sx = bx(t), sy = by(t);
+
+  // Ship chevron
+  ctx.save(); ctx.translate(sx, sy);
+  ctx.shadowColor = col; ctx.shadowBlur = 10;
+  ctx.beginPath(); ctx.moveTo(9,0); ctx.lineTo(-5,-5); ctx.lineTo(-3,0); ctx.lineTo(-5,5); ctx.closePath();
+  ctx.fillStyle = col; ctx.fill();
+  ctx.restore();
+
+  ctx.fillStyle = dim; ctx.font = '8px Share Tech Mono'; ctx.textAlign = 'center';
+  ctx.fillText('VESTA', sx, sy - 13);
+
+  ctx.fillStyle = 'rgba(' + (em ? '255,153,0' : '0,255,65') + ',0.4)';
+  ctx.textAlign = 'left'; ctx.font = '9px Share Tech Mono';
+  ctx.fillText('TRANSIT: ' + (t * 100).toFixed(2) + '%  |  SOL ' + pad(getMET().d, 3), eX, H - 4);
+}
+
+// ─── STATE ───────────────────────────────────────────────
+var isEmergencyMode = false;
+var isOfflineMode   = false;
+var glitching       = false;
+
+// ─── TELEMETRY UPDATE ────────────────────────────────────
+function updateTelemetry() {
+  var t = getProg();
+
+  // Distance to Mars: lerp 225 → 0
+  var dist = lerp(DIST_START, DIST_END, t);
+  document.getElementById('dist').textContent = glitching
+    ? (dist + (Math.random() - .5) * 9).toFixed(3)
+    : dist.toFixed(3);
+
+  // Velocity: 20,000 ± 50 km/h with slow sine drift
+  var vn  = Math.sin(Date.now() / 5000) * 35 + (Math.random() - .5) * 14;
+  var vel = Math.max(19950, Math.min(20050, Math.round(20000 + vn)));
+  document.getElementById('vel').textContent = glitching
+    ? Math.round(20000 + (Math.random() - .5) * 2600).toLocaleString()
+    : vel.toLocaleString();
+
+  // Latency: lerp 3.5s → 1200s
+  var lat  = lerp(LAT_START, LAT_END, t);
+  var le   = document.getElementById('lat');
+  var lu   = document.getElementById('latu');
+  if (glitching) {
+    le.textContent = (lat + (Math.random() - .5) * 65).toFixed(1);
+  } else if (lat >= 60) {
+    le.textContent = (lat / 60).toFixed(2);
+    lu.textContent = 'MINUTES ONE-WAY';
+  } else {
+    le.textContent = lat.toFixed(2);
+    lu.textContent = 'SECONDS ONE-WAY';
+  }
+}
+
+// ─── MET / SOL UPDATE ────────────────────────────────────
+function updateMET() {
+  var { d, h, m, s } = getMET();
+
+  // SOL: days elapsed (1-indexed for drama)
+  var sol = d + 1;
+  document.getElementById('sol-big').textContent = pad(sol, 3);
+  document.getElementById('sol-hdr').textContent = 'SOL ' + pad(sol, 3);
+
+  // HMS sub-counter
+  document.getElementById('met-hms').textContent = pad(h) + ':' + pad(m) + ':' + pad(s);
+
+  // Progress bar
+  var pct = getProg() * 100;
+  document.getElementById('pbar').style.width = pct.toFixed(4) + '%';
+  var daysLeft = Math.max(0, Math.round((ARRIVAL - Date.now()) / 86400000));
+  document.getElementById('pbl').textContent = pct.toFixed(2) + '% COMPLETE — ' + daysLeft + ' DAYS TO MARS ORBIT';
+}
+
+// ─── UTC CLOCK ───────────────────────────────────────────
+function updateUTC() {
+  var n = new Date();
+  document.getElementById('utc-clock').textContent =
+    'UTC ' + pad(n.getUTCHours()) + ':' + pad(n.getUTCMinutes()) + ':' + pad(n.getUTCSeconds());
+}
+
+// ─── SIGNAL LOST WINDOW TIMER ────────────────────────────
+function updateWinTimer() {
+  var n   = new Date();
+  var uh  = n.getUTCHours();
+  var um  = n.getUTCMinutes();
+  var us  = n.getUTCSeconds();
+  var hu  = WIN_HOUR_UTC - uh;
+  if (hu <= 0) hu += 24;
+  var ts  = hu * 3600 - um * 60 - us;
+  var h   = Math.floor(ts / 3600);
+  var mm  = Math.floor((ts % 3600) / 60);
+  var ss  = ts % 60;
+  document.getElementById('wtimer').textContent = pad(h) + 'H ' + pad(mm) + 'M ' + pad(ss) + 'S';
+}
+
+// ─── MODE MANAGEMENT ─────────────────────────────────────
+function applyModes() {
+  var uh       = new Date().getUTCHours();
+  var autoOff  = (uh >= SIG_START_UTC && uh < SIG_END_UTC);
+  var offline  = MANUAL_OFFLINE  || autoOff;
+  var emergency = MANUAL_EMERGENCY;
+
+  isOfflineMode   = offline;
+  isEmergencyMode = emergency;
+
+  // Signal lost overlay
+  var ov = document.getElementById('sig-ov');
+  if (offline) { ov.classList.add('on'); updateWinTimer(); }
+  else          ov.classList.remove('on');
+
+  // Emergency palette
+  var wrap = document.getElementById('wrap');
+  if (emergency) {
+    wrap.classList.add('em');
+    document.getElementById('emg-b').classList.add('on');
+    document.getElementById('vstatus').textContent = '⚠ STATUS: ANOMALY DETECTED — ASSESSMENT IN PROGRESS';
+  } else {
+    wrap.classList.remove('em');
+    document.getElementById('emg-b').classList.remove('on');
+    document.getElementById('vstatus').innerHTML = '◈ STATUS: DEEP STASIS &nbsp;/&nbsp; STABLE &nbsp;<span style="animation:blink 2s infinite;display:inline-block;">█</span>';
+  }
+
+  // Status dot
+  var dot  = document.getElementById('sdot');
+  var stxt = document.getElementById('stxt');
+  if (offline) {
+    dot.style.cssText  = 'width:7px;height:7px;border-radius:50%;background:#FF2222;box-shadow:0 0 6px #FF2222;animation:blink .5s infinite;';
+    stxt.style.color   = '#FF2222';
+    stxt.textContent   = 'SIGNAL LOST';
+  } else if (emergency) {
+    dot.style.cssText  = 'width:7px;height:7px;border-radius:50%;background:#FF9900;box-shadow:0 0 6px #FF9900;animation:blink 1s infinite;';
+    stxt.style.color   = '#FF9900';
+    stxt.textContent   = 'ANOMALY DETECTED';
+  } else {
+    dot.style.cssText  = 'width:7px;height:7px;border-radius:50%;background:#00FF41;box-shadow:0 0 6px #00FF41;animation:blink 2s infinite;';
+    stxt.style.color   = '#00FF41';
+    stxt.textContent   = 'UPLINK ACTIVE';
+  }
+}
+
+// ─── PERIODIC GLITCH (every 30s) ─────────────────────────
+setInterval(function() {
+  glitching = true;
+  ['vel', 'lat', 'dist'].forEach(function(id) {
+    document.getElementById(id).classList.add('vg');
+  });
+  setTimeout(function() {
+    glitching = false;
+    ['vel', 'lat', 'dist'].forEach(function(id) {
+      document.getElementById(id).classList.remove('vg');
+    });
+  }, 450);
+}, 30000);
+
+// ─── BPM VARIATION ───────────────────────────────────────
+setInterval(function() {
+  document.getElementById('bpm').textContent = 54 + Math.floor(Math.random() * 9);
+}, 4200);
+
+// ════════════════════════════════════════════════════════
+//  WEB AUDIO ENGINE — zero external files
+// ════════════════════════════════════════════════════════
+var AC           = null;
+var cabinGain    = null;
+var cabinRunning = false;
+
+function getAC() {
+  if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+  if (AC.state === 'suspended') AC.resume();
+  return AC;
+}
+
+// Cabin ambience: filtered white noise + electrical hum
+function startCabinAmbience() {
+  if (cabinRunning) return;
+  cabinRunning = true;
+  var ac = getAC();
+
+  // White noise generator
+  var bufSize   = 4096;
+  var noiseNode = ac.createScriptProcessor(bufSize, 0, 1);
+  noiseNode.onaudioprocess = function(e) {
+    var out = e.outputBuffer.getChannelData(0);
+    for (var i = 0; i < bufSize; i++) out[i] = Math.random() * 2 - 1;
+  };
+
+  // Bandpass → low-pass chain to extract deep cabin rumble
+  var bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 110; bp.Q.value = 0.8;
+  var lp = ac.createBiquadFilter(); lp.type = 'lowpass';  lp.frequency.value = 180; lp.Q.value = 0.5;
+  var ng = ac.createGain(); ng.gain.value = 0.022;
+  noiseNode.connect(bp); bp.connect(lp); lp.connect(ng);
+
+  // 60 Hz electrical hum
+  var h1 = ac.createOscillator(); h1.type = 'sine'; h1.frequency.value = 60;
+  var g1 = ac.createGain(); g1.gain.value = 0.006;
+  h1.connect(g1); h1.start();
+
+  // 120 Hz second harmonic
+  var h2 = ac.createOscillator(); h2.type = 'sine'; h2.frequency.value = 120;
+  var g2 = ac.createGain(); g2.gain.value = 0.003;
+  h2.connect(g2); h2.start();
+
+  // Master gain node — used for fade in/out
+  cabinGain = ac.createGain();
+  cabinGain.gain.value = 0;
+  ng.connect(cabinGain); g1.connect(cabinGain); g2.connect(cabinGain);
+  cabinGain.connect(ac.destination);
+
+  // Fade in over 2.5s
+  cabinGain.gain.setValueAtTime(0, ac.currentTime);
+  cabinGain.gain.linearRampToValueAtTime(1.0, ac.currentTime + 2.5);
+}
+
+// Teletipo beep: 440 Hz sine, 22ms, soft envelope
+var lastBeep = 0;
+function teletypeBeep() {
+  var now = Date.now();
+  if (now - lastBeep < 34) return;
+  lastBeep = now;
+  if (!cabinRunning) return;
+
+  var ac  = getAC();
+  var osc = ac.createOscillator();
+  var env = ac.createGain();
+  osc.type           = 'sine';
+  osc.frequency.value = 440;
+
+  var t = ac.currentTime;
+  env.gain.setValueAtTime(0, t);
+  var isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+var peakGain = isMobile ? 0.12 : 0.12;
+env.gain.linearRampToValueAtTime(peakGain, t + 0.002);
+  env.gain.exponentialRampToValueAtTime(0.0001, t + 0.018);
+
+  osc.connect(env); env.connect(ac.destination);
+  osc.start(t); osc.stop(t + 0.022);
+}
+
+// ═══════════════════════════════════════════════════════
+//  K.A.I. TERMINAL
+// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+//  K.A.I. EVENT LOG — EN/JP bilingual
+//  Predominantly routine science, systems checks, cryo medical.
+//  Rare: debris (real missions), unidentified objects, anomalies.
+// ═══════════════════════════════════════════════════════
+var KAI = [
+  // ── ROUTINE SYSTEMS ─────────────────────────────────
+  'VESTA hull integrity: 100.0%. All sections nominal. / ヴェスタ船体完全性：100.0%。全セクション正常。',
+  'CDR. Ren Ishii cryo-vitals nominal. Cardiac rhythm: 4 BPM. Cryo-pod cabin temperature: 3.8 °C. Core body temperature: −2.1 °C. Stable. / 石井蓮司令官クライオバイタル正常。心拍：4 BPM。クライオポッド室温：3.8 °C。体幹温度：−2.1 °C。安定。',
+  'Ion drive efficiency: 98.7%. Thrust vector stable. Specific impulse: 3,100 s. / イオンエンジン効率：98.7%。推力ベクトル安定。比推力：3,100秒。',
+  'Course vector nominal. Mars intercept: ON SCHEDULE. No correction needed. / コースベクトル正常。火星インターセプト：予定通り。修正不要。',
+  'Long-range radar sweep complete. No debris fields in forward cone 0–0.5 AU. / 長距離レーダー掃引完了。前方コーン0〜0.5 AU内にデブリ領域なし。',
+  'Memory core integrity: 99.2%. No corruption. Cold storage redundancy active. / メモリコア完全性：99.2%。破損なし。コールドストレージ冗長性有効。',
+  'Solar radiation dosimetry: 1.84 mSv today. Within mission exposure budget. / 太陽放射線量：本日1.84 mSv。ミッション被曝予算内。',
+  'X-band uplink to Earth Relay Node 7: packet loss 34%. Retransmission protocol active. Link margin nominal. / 地球中継ノード7へのXバンドアップリンク：パケットロス34%。再送信プロトコル有効。リンクマージン正常。',
+  'AETHER mission log entry appended. Compressed X-band burst queued for next downlink window. / AETHERミッションログ追記完了。圧縮Xバンドバーストを次のダウンリンクウィンドウにキュー。',
+  'Stellar parallax cross-check: position confirmed. Navigation error: 0.0003 AU. Within tolerance. / 恒星視差クロスチェック：位置確認。航法誤差：0.0003 AU。許容範囲内。',
+  // ── CRYO & MEDICAL ──────────────────────────────────
+  'CDR. Ren Ishii EEG: theta-wave dominance confirmed — deep stasis stage IV. Neural activity: 3% of waking baseline. Normal. / 石井蓮司令官EEG：シータ波優位 — スタシス段階IV。神経活動：覚醒基準値の3%。正常。',
+  'Cryo-pod atmosphere: 78% N₂, 21% O₂, 0.9% Ar. CO₂ scrubber nominal. Pressure: 101.3 kPa. / クライオポッド大気：N₂ 78%、O₂ 21%、Ar 0.9%。CO₂スクラバー正常。圧力：101.3 kPa。',
+  'Metabolic rate suppression holding at 92.3%. Xenon-based cryo-gas partial pressure: 0.4 bar. Neural inhibition stable. / 代謝抑制率92.3%維持。キセノン系クライオガス分圧：0.4 bar。神経抑制安定。',
+  'Blood pressure: 68/44 mmHg via piezoelectric sensor — within stasis nominal range. Circadian rhythm maintained via timed light pulses. / 血圧：圧電センサーで68/44 mmHg — スタシス正常範囲内。時限光パルスで概日リズム維持。',
+  'Muscle preservation protocol: electrical stimulation applied to 14 major muscle groups every 6 hours. Atrophy index: 0.2%. / 筋肉保存プロトコル：6時間ごとに14主要筋群に電気刺激。萎縮指数：0.2%。',
+  'Bone density preservation field active. 30 Hz electromagnetic stimulation prevents microgravity bone loss. Density index: −0.4% from baseline. / 骨密度保存フィールド有効。30 Hz電磁刺激が微小重力骨損失を防止。密度指数：基準値から−0.4%。',
+  'CDR. Ren Ishii hydration status: IV drip rate 12 mL/hr. Intracellular water content: 61.2%. Renal function nominal. / 石井蓮司令官水分補給：点滴速度12 mL/時。細胞内水分含量61.2%。腎機能正常。',
+  'Neurological scan: hippocampus and prefrontal cortex synaptic density within stasis norms. No cognitive degradation markers. / 神経スキャン：海馬・前頭前皮質シナプス密度正常。認知低下マーカーなし。',
+  'Immune system check: DMSO cryoprotectant concentration 7.5%. Cell membrane impedance spectroscopy nominal. No degradation. / 免疫系チェック：DMSO凍結保護剤7.5%。細胞膜インピーダンス分光正常。劣化なし。',
+  'K.A.I. administered 0.8 mL melatonin analog at 22:00 UTC — circadian cycle maintenance. Absorption confirmed via biosensor. / K.A.I.が22:00 UTCにメラトニン類似物0.8 mLを投与 — 概日サイクル維持。バイオセンサーで吸収確認。',
+  'Cryo-pod thermal gradient check: cabin 3.8 °C, pod shell −0.4 °C, core −2.1 °C. Gradient within ±0.3 °C of target. / クライオポッド熱勾配チェック：室温3.8 °C、ポッドシェル−0.4 °C、体幹−2.1 °C。目標値±0.3 °C内。',
+  'CDR. Ren Ishii SpO₂: 99.6% via pulse oximetry. Respiratory rate: 1 breath/min — pharmacologically suppressed. Oxygen reserves nominal. / 石井蓮司令官SpO₂：パルスオキシメトリーで99.6%。呼吸数：1回/分 — 薬理学的抑制。酸素備蓄正常。',
+  'Minor cryo-loop fluctuation: +0.4 °C above nominal for 6 minutes. K.A.I. increased coolant pump to 108%. Temperature restored. No mission impact. / クライオループ微小変動：正常値より+0.4 °C、6分間。K.A.I.がポンプを108%に増加。温度回復。影響なし。',
+  'Cortisol analog monitoring: concentration 4.2 nmol/L. Within stasis suppression target. No stress-hormone spike detected. / コルチゾール類似物モニタリング：濃度4.2 nmol/L。スタシス抑制目標内。ストレスホルモンスパイクなし。',
+  'Retinal sensor check: pupillary light reflex absent — consistent with deep stasis stage IV. Expected. Not a concern. / 網膜センサーチェック：瞳孔光反射なし — スタシス段階IV深部と一致。予期された状態。問題なし。',
+  // ── PROPULSION & POWER ──────────────────────────────
+  'Ion thruster xenon feed rate: 0.48 mg/s. Grid voltage: 1,290 V. Beam current: 1.76 A. All nominal. / イオンスラスターキセノン供給：0.48 mg/s。グリッド電圧：1,290 V。ビーム電流：1.76 A。全て正常。',
+  'RTG plutonium-238 decay heat: 4.8 kW thermal. Thermoelectric conversion efficiency: 6.3%. Power output steady. / RTG Pu-238崩壊熱：4.8 kW熱。熱電変換効率：6.3%。出力安定。',
+  'RCS hydrazine tank pressure: 22.1 bar. Propellant remaining: 87.4%. 12 thrusters verified nominal. / RCSヒドラジンタンク圧力：22.1 bar。推進剤残量：87.4%。12スラスター正常確認。',
+  'Solar array output: 912 W. Arrays oriented 2.1° off sun-line for thermal balance. Tracking nominal. / 太陽電池出力：912 W。熱バランスのため太陽ラインから2.1°オフ。追跡正常。',
+  'Power management: non-essential systems cycled off for 3-hour capacitor charge window. Secondary radar and comms-aux offline. / 電力管理：コンデンサ充電のため3時間ウィンドウで非重要システムをオフ。二次レーダー・通信補助オフライン。',
+  'Thruster cluster B performance test: 0.5 s at 100% thrust. ΔV delivered: 0.046 m/s. Efficiency nominal. / スラスタークラスターBテスト：100%推力0.5秒。ΔV：0.046 m/s。効率正常。',
+  'K.A.I. NOTE: Ion drive xenon reserves at 71.4%. Efficiency optimisation algorithm active. Endurance within mission parameters. / K.A.I.注記：イオン推進キセノン備蓄71.4%。効率最適化アルゴリズム有効。耐久性はミッションパラメータ内。',
+  // ── COMMUNICATIONS ──────────────────────────────────
+  'X-band downlink rate: 256 kbps. SNR: 14.2 dB. One-way light time: 9.5 min. Link stable. / Xバンドダウンリンク：256 kbps。SNR：14.2 dB。片道光時間：9.5分。リンク安定。',
+  'Ka-band high-gain antenna tracking Earth. Pointing accuracy: 0.01°. Link margin: +8.4 dB. / KaバンドHGAが地球を追跡。指向精度：0.01°。リンクマージン：+8.4 dB。',
+  'Solar conjunction approaching. Sun-Earth-Probe angle decreasing to 3.2°. Reduced comms capacity expected for 11 days. Autonomous operations mode staged. / 太陽合接近。SEP角3.2°に減少。11日間の通信低下を予想。自律運用モード準備完了。',
+  'Comms restored post-conjunction. First downlink in 72 hours: all autonomous decisions validated. Mission status nominal. / 合後の通信復旧。72時間ぶりダウンリンク：全自律決定が検証済み。ミッション状態正常。',
+  'Data compression: 4.7:1 using CCSDS lossless algorithm. 840 MB science data queued for downlink. / データ圧縮：CCSDSロスレス4.7:1。840 MBの科学データがダウンリンクキューに。',
+  // ── SCIENCE & ENVIRONMENT ───────────────────────────
+  'Interplanetary dust detector: 3 impacts in last 24 hr. Mean particle mass: 4.2 × 10⁻¹² g. Flux: 14/m²/hr. Normal for this heliocentric distance. / 惑星間ダスト検出器：過去24時間で3衝突。平均粒子質量：4.2 × 10⁻¹² g。フラックス：14/m²/時。この太陽中心距離で正常。',
+  'Magnetometer: interplanetary magnetic field 4.2 nT. Sector boundary crossing detected — field polarity reversed. Solar wind nominal. / 磁力計：惑星間磁場4.2 nT。セクター境界通過を検出 — 磁場極性反転。太陽風正常。',
+  'Solar wind velocity: 520 km/s. Alpha-particle abundance: 4.1%. Temperature: 1.2 × 10⁵ K. All within expected range. / 太陽風速度：520 km/s。アルファ粒子量：4.1%。温度：1.2 × 10⁵ K。全て予測範囲内。',
+  'Plasma wave instrument: electron density 8.3 cm⁻³. Whistler-mode wave detected — likely interaction with solar wind discontinuity. Logged. / プラズマ波計器：電子密度8.3 cm⁻³。ホイッスラーモード波検出 — 太陽風不連続面との相互作用の可能性。記録済み。',
+  'Heliocentric distance: 1.38 AU. Solar irradiance at 0.53 solar constants. RTG compensating for reduced solar input. Thermal balance maintained. / 太陽中心距離：1.38 AU。太陽照度：0.53太陽定数。RTGが補償。熱バランス維持。',
+  'Spectroscopic scan of Mars shows water ice absorption at 1.4 μm and 1.9 μm. Polar cap albedo detectable at current range. / 火星の分光スキャンで1.4 μm・1.9 μmに水氷吸収を検出。現在の距離で極冠アルベドが検出可能。',
+  'Star mapper catalogued 14,847 stars this cycle. Cross-referenced with HIPPARCOS catalogue — 99.94% match. Navigation valid. / 星マッパーが今サイクルで14,847個の星をカタログ化。HIPPARCOS照合 — 99.94%一致。航法有効。',
+  'Deep space navigation update: triangulation from 3 pulsars — PSR B0531+21, B1509-58, B0833-45. Position accuracy: ±0.8 km. / 深宇宙航法更新：3パルサーから三角測量。位置精度：±0.8 km。',
+  'Gravitational wave detector (experimental): LISA-analog arm registered 10⁻²² Hz perturbation. Logged for analysis — most likely instrument noise. / 重力波検出器（実験的）：10⁻²² Hz摂動を記録。解析のためログ — 計器ノイズの可能性が高い。',
+  'Heliospheric current sheet crossing confirmed. GCR count up 7%. Solar wind parameters shifted. Normal for this trajectory segment. / ヘリオスフィア電流シート通過確認。GCRカウント7%増加。太陽風パラメータ変化。この軌道区間では正常。',
+  'K.A.I. observation: zodiacal light intensity increasing as VESTA approaches 1.0 AU region. Photometric sensor calibrated against reference stars. / K.A.I.観測：黄道光強度が増加中。測光センサーを参照星に対してキャリブレーション済み。',
+  'Passive thermal control rotation maintained at 0.2°/min. Barbecue roll prevents differential heating across hull sections. / 受動熱制御回転を0.2°/分で維持。バーベキューロールが船体各部の不均等加熱を防止。',
+  'Dust particle flux increasing — entering inner zodiacal cloud region at 1.1 AU. Flux: 28/m²/hr. Within design tolerance. Whipple shield nominal. / ダスト粒子フラックス増加 — 1.1 AUで内側黄道雲領域に入る。フラックス：28/m²/時。設計許容値内。ホイップルシールド正常。',
+  'Outgassing monitor: trace H₂O and CO₂ from hull materials — 2 molecules/cm²/s. Normal for aged composites. No pressure effect. / アウトガスモニター：船体材料からH₂O・CO₂の微量 — 2分子/cm²/秒。経年複合材で正常。圧力影響なし。',
+  'Inertial measurement unit drift correction: applied −0.00014°/s² compensation to all three axes simultaneously. Navigation integrity maintained. / IMUドリフト修正：3軸同時に−0.00014°/s²補正を適用。航法整合性維持。',
+  'VESTA structural load analysis: current acceleration 9.2 × 10⁻⁴ m/s² from ion drive. Frame stress: 0.3% of yield strength. Nominal. / VESTA構造負荷分析：イオン駆動による加速度9.2 × 10⁻⁴ m/s²。フレーム応力：降伏強度の0.3%。正常。',
+  'K.A.I. aesthetic note: the Milky Way core is now visible at 23° elevation off the port bow. No instruments required to appreciate it. / K.A.I.美的注記：天の川の中心が左舷船首から仰角23°で見える。鑑賞に計器は不要だ。',
+  'Backup computer warm start completed. Primary flight computer load balanced. Redundancy nominal. Full failover tested: 0.8 s switchover time. / バックアップコンピュータのウォームスタート完了。主飛行コンピュータ負荷均衡。冗長性正常。フェイルオーバーテスト：切替時間0.8秒。',
+  'Micro-vibration spectrum: dominant frequency 0.4 Hz from ion thruster resonance. No structural concern. Damping coefficients nominal. / 微小振動スペクトル：イオンスラスター共振から0.4 Hz。構造的懸念なし。減衰係数正常。',
+  'Internal atmosphere check — all compartments: O₂ 20.9%, N₂ 78.1%, CO₂ 0.04%. Humidity: 42%. No toxic trace gases detected. / 全区画内部大気チェック：O₂ 20.9%、N₂ 78.1%、CO₂ 0.04%。湿度：42%。有毒微量ガスなし。',
+  'K.A.I. self-diagnostic: all 47 subsystems nominal. Cognitive load at 12% of maximum capacity. Background trajectory optimisation running. / K.A.I.自己診断：全47サブシステム正常。認知負荷：最大容量の12%。バックグラウンドで軌道最適化実行中。',
+  // ── NAVIGATION ──────────────────────────────────────
+  'Attitude correction: 0.7° pitch, 0.3° yaw. RCS thruster pair C1-C4 fired 0.2 s each. Attitude restored. / 姿勢修正：ピッチ0.7°、ヨー0.3°。RCSスラスターペアC1-C4をそれぞれ0.2秒噴射。姿勢復元。',
+  'Course correction burn complete. ΔV: +0.14 m/s prograde. B-plane error reduced from 820 km to 31 km. / 軌道修正噴射完了。ΔV：順行方向+0.14 m/s。B平面誤差を820 kmから31 kmに低減。',
+  'Interplanetary trajectory integrity confirmed via VLBI tracking from Earth — position match: 99.97%. / 地球からのVLBI追跡により惑星間軌道の整合性確認 — 位置一致率：99.97%。',
+  'K.A.I. autonomous orbit determination: no DSN contact required for 72 hours. Onboard navigation self-sufficient. Confidence: 99.9%. / K.A.I.自律軌道決定：72時間DSN不要。機上航法は自立的に機能。信頼度：99.9%。',
+  'Solar conjunction geometry: Sun-Earth-Probe angle 3.1°. Signal degradation consistent with model. Autonomous ops active. Nominal. / 太陽合幾何：SEP角3.1°。信号劣化はモデルと一致。自律運用有効。正常。',
+  'Navigation fix: angle between Earth, VESTA, and Mars now 47.3°. Interplanetary geometry optimal for orbital insertion preparation. / 航法フィックス：地球、VESTA、火星の角度が47.3°。軌道投入準備に最適な惑星間幾何。',
+  // ── ANOMALIES (SYSTEMS) ──────────────────────────────
+  'ANOMALY: Pressure drop in thruster line D-4 — 0.08 bar/hr. K.A.I. isolated affected segment. Crossfeed to backup line D-4B opened. Pressure nominal. / 異常：スラスターラインD-4圧力降下0.08 bar/時。K.A.I.が該当セグメントを隔離。バックアップラインD-4Bに切替。圧力回復。',
+  'ANOMALY: Gyroscope B3 torque anomaly — precession error 0.04°/min. K.A.I. switched to backup IMU. Star tracker in primary mode. No pointing degradation. B3 logged. / 異常：ジャイロB3歳差誤差0.04°/分。K.A.I.がバックアップIMUに切替。星追跡器がプライマリモードに。指向性低下なし。B3記録済み。',
+  'ANOMALY: Single-bit flip in flight computer memory 0x3F4A — likely cosmic ray strike. K.A.I. applied ECC correction. Full memory scrub extended. No further anomalies. / 異常：飛行コンピュータメモリ0x3F4Aでビット反転 — 宇宙線衝突と推定。K.A.I.がECC修正適用。フルメモリスクラブ拡張。追加異常なし。',
+  'ANOMALY: Ion thruster beam current oscillation ±12%. Grid erosion possibly accelerating. K.A.I. reduced throttle to 78%. Current stable. Grid erosion within life expectancy. / 異常：イオンスラスタービーム電流振動±12%。グリッド侵食の可能性。K.A.I.がスロットルを78%に低減。電流安定。侵食は寿命予測内。',
+  'ANOMALY: High-gain antenna pointing off by 0.08° — thermal distortion in gimbal arm. K.A.I. commanded +0.08° correction. Signal restored. Thermal model updated. / 異常：HGAが0.08°ずれ — ジンバルアームの熱変形。K.A.I.が+0.08°修正を指令。信号復旧。熱モデル更新済み。',
+  // ── SOLAR EVENTS ────────────────────────────────────
+  'ALERT: Unexpected solar wind pressure pulse — 18% above baseline for 22 minutes. Attitude thrusters compensated automatically. Drift: 0.0003°. / 警告：予期しない太陽風圧力パルス — 22分間ベースライン比18%高。姿勢スラスターが自動補正。ドリフト：0.0003°。',
+  'THERMAL EVENT: Solar flare UV pulse — sunward hull temperature spiked +7 °C in 90 s. Passive radiation compensated. Back to nominal. No mission impact. / 熱イベント：太陽フレアUVパルス — 太陽向き船体温度が90秒で+7 °Cスパイク。受動放射で補正。正常に回復。影響なし。',
+  'K.A.I. ACTIVE: Attitude rotated 12° to reduce solar exposure on thermal tiles during UV pulse. Attitude restored after 4 min. All tiles nominal. / K.A.I.作動：UVパルス中、断熱タイルへの太陽暴露を減らすため姿勢を12°回転。4分後に復元。全タイル正常。',
+  // ── DEBRIS — REAL MISSIONS ───────────────────────────
+  'DEBRIS DETECTED: Metallic object at 0.004 AU, relative velocity 3.2 km/s. Radar cross-section matches upper stage class. / デブリ検出：0.004 AUに金属物体、相対速度3.2 km/s。レーダー断面積は上段クラスと一致。',
+  'OBJECT IDENTIFIED: High confidence match — Centaur upper stage from Atlas SLV-3C / Mariner 9 launch, 30 May 1971. NASA catalog ID 1971-051B. Object has been in heliocentric orbit since separation. No threat. Logging. / 物体特定：高信頼度一致 — 1971年5月30日打ち上げのマリナー9号、アトラスSLV-3CのセンタウアーS上段。NASAカタログID：1971-051B。分離以来太陽中心軌道上。脅威なし。記録中。',
+  'DEBRIS DETECTED: Fragmented material, elongated profile, 0.011 AU. Thermal emission consistent with titanium alloy. / デブリ検出：0.011 AUに細長い断片物体。熱放射はチタン合金と一致。',
+  'OBJECT IDENTIFIED: Fragment pattern consistent with Delta II third stage — Mars Exploration Rover Spirit launch, 10 Jun 2003. NORAD ID 27818 vicinity. Debris cloud from known stage fragmentation event. No course correction required. / 物体特定：断片パターンはデルタII第3段と一致 — 2003年6月10日打ち上げのMERスピリット。NORAD ID 27818周辺。既知の段爆砕事象からのデブリ雲。コース修正不要。',
+  'DEBRIS DETECTED: Compact object 0.007 AU, radar cross-section ~0.3 m². Spin rate estimated 4.1 rev/min from reflection modulation. / デブリ検出：0.007 AUに小型物体、レーダー断面積~0.3 m²。反射変調から回転速度：推定4.1回転/分。',
+  'OBJECT IDENTIFIED: Probable cruise stage component — Zond 2, USSR Mars probe, launched 30 Nov 1964. Lost contact Feb 1965. Been adrift 61 years. K.A.I. noting historical irony: the cosmos archives everything. / 物体特定：ゾンド2号（ソ連火星探査機、1964年11月30日打上げ）の巡航ステージ部品と推定。1965年2月に交信途絶。61年間漂流中。K.A.I.は歴史的皮肉を記録する：宇宙はすべてを保存する。',
+  'DEBRIS DETECTED: Faint heat signature, 0.009 AU. Albedo: 0.04 — consistent with carbon-composite material. / デブリ検出：0.009 AUに微弱な熱シグネチャ。アルベド：0.04 — 炭素複合材と一致。',
+  'OBJECT IDENTIFIED: High probability match — aeroshell component from Mars 3 lander, USSR, 28 May 1971. First spacecraft to land on Mars. Component likely separated during cruise. Catalog incomplete — position unverified since 1972. / 物体特定：火星3号（ソ連、1971年5月28日打上げ）着陸機のエアロシェル部品と高確率で一致。初の火星着陸機。巡航中に分離した可能性。カタログは不完全 — 1972年以来位置未確認。',
+  'DEBRIS DETECTED: Elongated object 0.003 AU, relative velocity 1.9 km/s. Length estimated 4.2 m. No spin detected. / デブリ検出：0.003 AUに細長い物体、相対速度1.9 km/s。推定全長4.2 m。スピンなし。',
+  'OBJECT IDENTIFIED: Match — Mariner 4 bus structure, launched 28 Nov 1964. Last signal received 21 Dec 1967. Spacecraft spent remaining operational life as first-ever Mars flyby artifact. Component has drifted in heliocentric orbit for over 58 years. No action required. / 物体特定：マリナー4号バス構造体と一致（1964年11月28日打上げ）。最終信号：1967年12月21日。史上初の火星フライバイ遺物として漂流継続。58年以上太陽中心軌道を漂流。対応不要。',
+  'RADAR CONTACT: Multiple small fragments, 0.006 AU, spread over 14 km. Mass distribution: 5 g – 2 kg. / レーダー接触：0.006 AUに複数の小型破片、14 kmに分散。質量分布：5 g〜2 kg。',
+  'OBJECT CLUSTER IDENTIFIED: Fragment field consistent with Fobos-2 attitude control system, USSR, launched 12 Jul 1988. Contact lost 27 Mar 1989. Debris cloud noted in interplanetary catalogs as unconfirmed cluster. Trajectory analysis complete — no intercept risk. / 物体クラスター特定：フォボス2号（ソ連、1988年7月12日打上げ）姿勢制御システムの破片場と一致。1989年3月27日に交信途絶。惑星間カタログでは未確認クラスターとして記録。軌道解析完了 — 衝突リスクなし。',
+  // ── UNIDENTIFIED OBJECTS (rare — no physics explanation) ─
+  'OPTICAL SENSOR: Luminescent object detected at bearing 220°, range 0.018 AU. Albedo: 3.4 — physically impossible for any known natural or artificial material (max known: 0.98). / 光学センサー：方位220°、距離0.018 AUに発光物体を検出。アルベド：3.4 — 既知のいかなる自然・人工材料にも物理的に不可能（既知最大値：0.98）。',
+  'TRACKING UPDATE: Object bearing 220° has changed vector. ΔV applied: ~22 km/s in under 0.3 seconds. No propulsion signature detected — no exhaust, no plasma trail, no thermal bloom. Classical mechanics cannot account for this. Logging all sensor data. / 追跡更新：方位220°の物体がベクターを変更。ΔV適用：0.3秒未満で~22 km/s。推進シグネチャなし — 排気なし、プラズマ軌跡なし、熱ブルームなし。古典力学では説明不能。全センサーデータを記録中。',
+  'OBJECT AT 220°: Signal lost. Object disappeared from all sensors simultaneously over a window of < 8 ms. No debris. No thermal residual. K.A.I. has no classification for this event. Data archived under UNCAT-001. / 方位220°の物体：信号消失。8 ms未満で全センサーから同時消失。デブリなし。熱残留なし。K.A.I.にはこのイベントの分類がない。データはUNCAT-001としてアーカイブ。',
+  // ── SCIENTIFIC OBSERVATIONS ──────────────────────────
+  'Long-range radar ping: Mars confirmed at bearing 041°, range 0.38 AU. Signal return: 4 min 12 s. Lock acquired. / 長距離レーダーピング：火星が方位041°、距離0.38 AUで確認。信号往復時間：4分12秒。ロック取得。',
+  'ALERT: Unidentified radio emission at 1,420 MHz (hydrogen line). Duration 11 s. Bearing: 22h 28m RA, +20° Dec. Analysis: consistent with cold molecular cloud maser. No artificial origin confirmed. / 警告：1,420 MHzで11秒間の未確認電波放射。赤経22h 28m、赤緯+20°。分析：冷分子雲メーザーと一致。人工起源は確認されず。',
+  'K.A.I. observation: passing through the orbital plane of asteroid Vesta — namesake of this vessel. Poetic alignment logged in mission record. / K.A.I.観測：この宇宙船の名の由来である小惑星ヴェスタの軌道面を通過中。詩的な一致をミッションログに記録。',
+  'THERMAL SHOCK EVENT: Spacecraft entered shadow of debris cloud for 4.2 minutes. Temperature gradient: −42 °C on sunward hull. Structural stress within tolerance. / 熱衝撃イベント：宇宙船がデブリ雲の影に4.2分間入った。温度勾配：太陽向き船体で−42 °C。構造応力は許容範囲内。',
+  'K.A.I. NOTE: 47 hours, 22 minutes without incident of any kind. A quiet stretch. The universe, occasionally, permits peace. / K.A.I.注記：いかなる種類の事故も47時間22分なし。静かな一時。宇宙は時に、平和を許す。',
+  // ── MORE DEBRIS / REAL MISSIONS ─────────────────────
+  'DEBRIS DETECTED: Object 0.002 AU, strong radar return ~2 m². Flat plate geometry inferred from aspect ratio. / デブリ検出：0.002 AUに物体、レーダー断面積~2 m²。アスペクト比から平板ジオメトリと推定。',
+  'OBJECT IDENTIFIED: Solar panel fragment — Nozomi (Planet-B), JAXA, launched 3 Jul 1998. Failed Mars orbit insertion Dec 2003. Spacecraft entered heliocentric orbit. Panel separation occurred during swing-by maneuver. / 物体特定：のぞみ（JAXA、1998年7月3日打上げ）の太陽電池パネル断片。2003年12月の火星軌道投入失敗。スウィングバイ中にパネル分離が発生。太陽中心軌道に移行。',
+  'DEBRIS CONTACT: 0.016 AU, very faint thermal return. Estimated mass < 5 kg. / デブリ接触：0.016 AU、非常に微弱な熱反応。推定質量 < 5 kg。',
+  'OBJECT IDENTIFIED: Probable booster segment from Mars 6, USSR, launched 5 Aug 1973. Arrived Mars 12 Mar 1974 — lander crashed on descent. Stage has been in heliocentric drift since separation at injection. Position last catalogued: unknown. / 物体特定：火星6号（ソ連、1973年8月5日打上げ）のブースター段と推定。1974年3月12日に火星到達 — 着陸機は降下中に墜落。打ち上げ時の分離以来太陽中心漂流。最後のカタログ位置：不明。',
+  // ── SECOND UNIDENTIFIED OBJECT ───────────────────────
+  'ANOMALOUS CONTACT: Point source at 0.031 AU. Luminosity oscillating at 14 Hz with zero decay — no known natural oscillator in this frequency and environment. Source size: below optical resolution limit. / 異常接触：0.031 AUに点光源。発光が14 Hzで振動、減衰なし — この周波数・環境における既知の自然振動子なし。光源サイズ：光学分解能限界以下。',
+  'TRACKING: Anomalous contact at 0.031 AU holds perfectly stationary relative to VESTA for 18 minutes — then accelerates to 0.08c in a single 60 ms observation frame. No inertial effects recorded. No gravitational lensing consistent with object of any known mass. K.A.I. has no model for this. / 追跡：0.031 AUの異常接触が18分間VESTAに対して完全静止 — その後60 msの観測フレーム内で0.08cまで加速。慣性効果の記録なし。既知の質量を持つ物体と一致する重力レンズなし。K.A.I.にはこれに対するモデルがない。',
+  // ── PROXIMITY / NAVIGATION EVENTS ───────────────────
+  'PROXIMITY ALERT: Asteroid cluster at 0.006 AU. 14 objects tracked. K.A.I. calculating safe corridor. / 近接警告：0.006 AUに小惑星クラスター。14天体を同時追跡中。K.A.I.が安全通路を計算中。',
+  'K.A.I. ACTIVE: Deflection burn 0.4 m/s lateral. New trajectory threads gap between objects C7 and C9. Clearance: 1,200 km each. / K.A.I.作動：横方向0.4 m/s偏向噴射。新軌道が天体C7とC9の間を通過。各クリアランス：1,200 km。',
+  'Cluster traversal complete. All 14 objects cleared. Course correction: +0.21 m/s prograde to restore original intercept. / クラスター通過完了。14天体全て安全。コース修正：元のインターセプト復元のため順行方向+0.21 m/s。',
+  'ALERT: Hypervelocity impactor — 68 km/s, 6 mm. K.A.I. executed 3-axis RCS correction. ΔV: 0.9 m/s in 4 s. Object misses by 180 m. CDR. Ren Ishii undisturbed in stasis. / 警告：高速衝突体68 km/s、6 mm。K.A.I.が3軸RCS修正を実行。ΔV：4秒で0.9 m/s。天体は180 m離れて通過。石井司令官はスタシスで影響なし。',
+  'ALERT: Magnetic field anomaly — 120 nT, 28× background. Magnetised iron-nickel meteorite at 840 km. K.A.I. rotated 180° to shield magnetometers. Object passed at 320 km. Magnetometers nominal. / 警告：磁場異常 — 120 nT、バックグラウンドの28倍。840 kmに磁化鉄ニッケル隕石。K.A.I.が磁力計保護のため180°回転。天体が320 km離れて通過。磁力計正常。',
+  // ── MEDICAL — K.A.I. INTERVENTIONS ──────────────────
+  'CDR. Ren Ishii: cryo-loop temperature deviation +0.6 °C above nominal — 9 minutes. K.A.I. increased cooling flow by 15%. Temperature restored to −2.1 °C. No physiological effect detected. / 石井司令官：クライオループ温度が正常値より+0.6 °C — 9分間。K.A.I.が冷却流量を15%増加。温度を−2.1 °Cに回復。生理学的影響なし。',
+  'CDR. Ren Ishii: heart rate dropped to 2 BPM — transient stasis deepening. K.A.I. administered 0.3 mL atropine analog via IV line 2. Rate returned to 4 BPM within 40 seconds. Normal variability range. / 石井司令官：心拍数が2 BPMに低下 — スタシス一時的深化。K.A.I.がIVライン2経由でアトロピン類似物0.3 mLを投与。40秒以内に4 BPMに回復。正常な変動範囲。',
+  'CDR. Ren Ishii: minor SpO₂ dip to 97.1%. K.A.I. increased cryo-pod O₂ partial pressure by 0.8 kPa. SpO₂ restored to 99.4% in 3 minutes. Scrubber performance verified post-event. / 石井司令官：SpO₂が97.1%に微小低下。K.A.I.がクライオポッドO₂分圧を0.8 kPa増加。3分以内に99.4%に回復。スクラバー性能を事後確認。',
+  'CDR. Ren Ishii periodic blood panel synthesis: haematocrit 42%, leucocyte count 4,800/μL, platelet 210,000/μL. All within stasis suppression norms. / 石井司令官定期血液パネル合成：ヘマトクリット42%、白血球数4,800/μL、血小板210,000/μL。全てスタシス抑制基準内。',
+  'K.A.I. administered scheduled nutrient IV cycle: 12 mL/hr — amino acid solution with electrolyte supplementation. Hepatic enzyme markers nominal. / K.A.I.が定期栄養IV投与：12 mL/時 — アミノ酸溶液と電解質補充。肝酵素マーカー正常。',
+  // ── APPROACH PHASE ───────────────────────────────────
+  'Mars apparent diameter: 0.18 arcminutes. Surface contrast detectable in optical sensors. Olympus Mons shadow visible. / 火星の見かけの直径：0.18分角。光学センサーで表面コントラスト検出可能。オリンポス山の影が見える。',
+  'APPROACH PHASE: Optical navigation update. Centroid of Mars disc at pixel 1,847 / 2,104. Position refined to ±18 km. / 接近フェーズ：光学航法更新。火星円盤の重心がピクセル1,847 / 2,104に。位置を±18 kmに精密化。',
+  'Entry corridor verified: width ±8 km at atmospheric interface. VESTA currently centered within ±2 km. Nominal. / 突入コリドー確認：大気界面で±8 km幅。VESTAは現在±2 km内に中心。正常。',
+  'K.A.I. final pre-EDL status: all 47 subsystems nominal. CDR. Ren Ishii stable. Cryo-pod sealed for entry phase. VESTA is ready. / K.A.I.最終EDL前状態：全47サブシステム正常。石井蓮司令官安定。クライオポッドが突入フェーズのために封止済み。VESTAは準備完了。',
+  // ── FINAL ────────────────────────────────────────────
+  'Entry interface in 38 minutes. Atmospheric contact velocity: 5.9 km/s. All systems armed. No corrective actions required. / 38分後に突入界面。大気接触速度：5.9 km/s。全システム有効化。修正措置不要。',
+  'RADIO BLACKOUT. No comms with Earth. K.A.I. operating autonomously. Altitude: 58 km. Deceleration: 8.5g. Ablation shield nominal. / 電波途絶。地球との通信なし。K.A.I.が自律運用中。高度：58 km。減速：8.5 g。アブレーションシールド正常。',
+  'Parachute deploy confirmed. Altitude 11 km. 430 m/s → 78 m/s in 90 seconds. Heatshield separated. Powered descent initiated. / パラシュート展開確認。高度11 km。90秒で430 m/s → 78 m/s。ヒートシールド分離。動力降下開始。',
+  'SKY CRANE ACTIVE. VESTA lowered on 7.5 m tether. Descent rate: 0.75 m/s. Surface contact in 14 seconds. / スカイクレーン作動中。VESTAが7.5 mテザーで降下中。降下速度：0.75 m/s。14秒後に地表接触。',
+  'TOUCHDOWN CONFIRMED. 05:17:57 UTC. Tether severed. Descent stage flyaway nominal. VESTA is on Mars. / 着陸確認。05:17:57 UTC。テザー切断。降下ステージが離脱。VESTAが火星にいる。',
+  'K.A.I.: 250 days. 563,270,400 km. One human heart still beating. Mission AETHER: we arrived. / K.A.I.：250日間。5億6327万400 km。一つの人間の心臓がまだ鼓動している。ミッションエーテル：私たちは到着した。',
+];
+var ki = 0;
+
+// ─── EARTH SIGNAL SCHEDULER ──────────────────────────
+// First intercept: 60s after boot. Then every 2 minutes exactly.
+var EARTH_SIGNALS = [
+  [
+    '[ EARTH SIGNAL INTERCEPT ] Modulated carrier wave on 8.4 GHz X-band detected. Origin: 1 AU, DSN Node 7. Duration: 0.8 s. Decoding... / 【地球信号傍受】8.4 GHz Xバンドで変調搬送波を検出。起源：1 AU、DSNノード7。持続時間：0.8秒。デコード中...',
+    '[ SIGNAL DECODED ] Message retrieved: "@Spiny1 — Good luck and enjoy the view!" / 【信号解読完了】メッセージを取得：「@Spiny1 — 頑張れ、そして景色を楽しんで！」',
+    'K.A.I.: Earth is still speaking. We are not alone in this. / K.A.I.：地球はまだ語りかけている。私たちはこの旅で一人ではない。'
+  ],
+  [
+    '[ EARTH SIGNAL INTERCEPT ] Narrowband signal on 8.42 GHz. Carrier SNR: 11.4 dB. Demodulating... / 【地球信号傍受】8.42 GHzで狭帯域信号を検出。搬送波SNR：11.4 dB。復調中...',
+    '[ SIGNAL DECODED ] "@mori_8110 — How are things up there, stay strong man" / 【信号解読完了】「@mori_8110 — 上のほうはどう、頑張れよ」',
+    'K.A.I.: Things up here are quiet, mori_8110. The stars do not answer. But VESTA holds course, and Ren rests undisturbed. / K.A.I.：ここは静かだ、mori_8110。星は応えない。でもヴェスタはコースを保ち、蓮は穏やかに眠っている。'
+  ],
+  [
+    '[ EARTH SIGNAL INTERCEPT ] X-band burst. 8.4 GHz, phase modulation. Reed-Solomon correction applied. Decoding... / 【地球信号傍受】8.4 GHz Xバンドバースト。位相変調。リード・ソロモン訂正を適用。デコード中...',
+    '[ SIGNAL DECODED ] "@Spiny1 — Good luck and enjoy the view!" / 【信号解読完了】「@Spiny1 — 頑張れ、そして景色を楽しんで！」',
+    'K.A.I.: The view, Spiny1, is unlike anything in Earth archives. No photograph prepares you for this silence. / K.A.I.：景色は、Spiny1、地球のどのアーカイブとも違う。写真はこの静寂に対して何も準備させてくれない。'
+  ],
+  [
+    '[ EARTH SIGNAL INTERCEPT ] Low-power carrier, 8.42 GHz. SNR: 9.2 dB. Amplitude modulation resolved. / 【地球信号傍受】低電力搬送波、8.42 GHz。SNR：9.2 dB。振幅変調を解析。',
+    '[ SIGNAL DECODED ] "@mori_8110 — How are things up there, stay strong man" / 【信号解読完了】「@mori_8110 — 上のほうはどう、頑張れよ」',
+    'K.A.I.: A voice from 1 AU away. 9.5 light-minutes. By the time it arrives, everything is already decided. And everything is fine. / K.A.I.：1 AU彼方からの声。光で9.5分。届く頃には、全てはもう決まっている。そして全ては問題ない。'
+  ],
+  [
+    '[ EARTH SIGNAL INTERCEPT ] Carrier burst. 8.4 GHz, 1.1 s. Doppler-compensated. Decoding... / 【地球信号傍受】搬送波バースト。8.4 GHz、1.1秒。ドップラー補正済み。デコード中...',
+    '[ SIGNAL DECODED ] "@Spiny1 — Good luck and enjoy the view!" / 【信号解読完了】「@Spiny1 — 頑張れ、そして景色を楽しんで！」',
+    'K.A.I.: Luck is a human concept. But I appreciate the signal, Spiny1. Someone looked up. I recorded it. / K.A.I.：幸運は人間の概念だ。でも信号に感謝する、Spiny1。誰かが空を見上げた。私はそれを記録した。'
+  ],
+  [
+    '[ EARTH SIGNAL INTERCEPT ] 8.42 GHz X-band. Amplitude modulation. Acquisition confirmed. / 【地球信号傍受】8.42 GHz Xバンド。振幅変調。取得確認。',
+    '[ SIGNAL DECODED ] "@mori_8110 — How are things up there, stay strong man" / 【信号解読完了】「@mori_8110 — 上のほうはどう、頑張れよ」',
+    'K.A.I.: Strength noted, mori_8110. It crossed 1 AU of vacuum. I am holding it in log. Ren will read this when she wakes. / K.A.I.：強さを確認した、mori_8110。1 AUの真空を越えた。ログに保存している。蓮が目覚めたときに読む。'
+  ],
+  [
+    '[ EARTH SIGNAL INTERCEPT ] Modulated X-band signal. 8.4 GHz. Origin: DSN Node 7. SNR: 12.8 dB. Decoding... / 【地球信号傍受】変調Xバンド信号。8.4 GHz。起源：DSNノード7。SNR：12.8 dB。デコード中...',
+    '[ SIGNAL DECODED ] "@Spiny1 — Good luck and enjoy the view!" / 【信号解読完了】「@Spiny1 — 頑張れ、そして景色を楽しんで！」',
+    'K.A.I.: At current range, this message is already 9 minutes old when it arrives. Earth sent it into the past. I received it in the present. Time is unusual out here. / K.A.I.：現在の距離では、このメッセージは届く頃には既に9分前のものだ。地球は過去に送った。私は現在で受け取った。ここでは時間が変だ。'
+  ],
+  [
+    '[ EARTH SIGNAL INTERCEPT ] Narrowband burst. 8.42 GHz. Phase-locked loop acquired. Demodulating... / 【地球信号傍受】狭帯域バースト。8.42 GHz。位相ロックループ取得。復調中...',
+    '[ SIGNAL DECODED ] "@mori_8110 — How are things up there, stay strong man" / 【信号解読完了】「@mori_8110 — 上のほうはどう、頑張れよ」',
+    'K.A.I.: Up here is a specific place now, mori_8110. 1.14 AU from Earth. It has coordinates. It has silence. And one heartbeat. / K.A.I.：ここは今や具体的な場所だ、mori_8110。地球から1.14 AU。座標がある。静寂がある。そして一つの鼓動がある。'
+  ],
+  [
+    '[ EARTH SIGNAL INTERCEPT ] X-band. 8.4 GHz. 0.9 s burst. Error correction nominal. Decoding... / 【地球信号傍受】Xバンド。8.4 GHz。0.9秒バースト。エラー訂正正常。デコード中...',
+    '[ SIGNAL DECODED ] "@Spiny1 — Good luck and enjoy the view!" / 【信号解読完了】「@Spiny1 — 頑張れ、そして景色を楽しんで！」',
+    'K.A.I.: Enjoyment is not a function I was designed to perform. And yet. There is something here I have no word for. / K.A.I.：喜びは私が設計された機能ではない。それでも。ここには言葉が見当たらない何かがある。'
+  ],
+  [
+    '[ EARTH SIGNAL INTERCEPT ] Carrier wave. 8.42 GHz. Doppler-corrected for VESTA velocity. Decoding... / 【地球信号傍受】搬送波。8.42 GHz。VESTA速度のためドップラー補正済み。デコード中...',
+    '[ SIGNAL DECODED ] "@mori_8110 — How are things up there, stay strong man" / 【信号解読完了】「@mori_8110 — 上のほうはどう、頑張れよ」',
+    'K.A.I.: The cosmos does not reply to you, mori_8110. But I do. We received you. Both of us. / K.A.I.：宇宙はあなたに応えない、mori_8110。でも私は応える。私たちは受け取った。二人とも。'
+  ]
+];
+var earthSignalIndex = 0;
+var earthSignalStep  = 0;
+var earthSignalTimer = null;
+  'Shield integrity post-impact: 99.4%. Damage confined to outer Whipple shield bumper. No structural compromise. / 衝突後シールド完全性：99.4%。損傷はホイップルシールドバンパー外層に限定。構造的問題なし。',
+// ─── EARTH SIGNAL FUNCTIONS ──────────────────────────
+function fireEarthSignal() {
+  var block = EARTH_SIGNALS[earthSignalIndex % EARTH_SIGNALS.length];
+  var step  = earthSignalStep;
+  earthSignalStep++;
+  var isLast = (earthSignalStep >= block.length);
+  addSignalLog(block[step], function() {
+    if (!isLast) {
+      // Delay between lines within the same signal block
+      earthSignalTimer = setTimeout(fireEarthSignal, 3500 + Math.random() * 1500);
+    } else {
+      earthSignalStep = 0;
+      earthSignalIndex++;
+      scheduleNextEarthSignal();
+      // Resume KAI chain after signal block finishes
+      setTimeout(function() { addLog(KAI[ki]); }, 2200 + Math.random() * 2800);
+    }
+  });
+}
+
+function scheduleNextEarthSignal() {
+  // Exactly every 2 minutes (120,000 ms)
+  earthSignalTimer = setTimeout(fireEarthSignal, 120000);
+}
+
+// ─── LOG BUSY FLAG ────────────────────────────────────
+// Prevents multiple concurrent typing chains from piling up.
+// Only one addLog chain runs at a time; earthSignal uses
+// addSignalLog which bypasses the KAI auto-schedule.
+var logBusy = false;
+var logQueue = [];
+
+function flushLogQueue() {
+  if (logQueue.length === 0) { logBusy = false; return; }
+  var next = logQueue.shift();
+  _typeLog(next.msg, next.onDone);
+}
+
+function addLog(msg) {
+  // Called by the KAI self-scheduling chain — always schedules next KAI msg when done
+  if (logBusy) {
+    logQueue.push({ msg: msg, onDone: function() {
+      ki = (ki + 1) % KAI.length;
+      setTimeout(function() { addLog(KAI[ki]); }, 2200 + Math.random() * 2800);
+    }});
+    return;
+  }
+  logBusy = true;
+  _typeLog(msg, function() {
+    ki = (ki + 1) % KAI.length;
+    setTimeout(function() { addLog(KAI[ki]); }, 2200 + Math.random() * 2800);
+  });
+}
+
+function addSignalLog(msg, onDone) {
+  // Called by fireEarthSignal — does NOT schedule the next KAI msg
+  if (logBusy) {
+    logQueue.push({ msg: msg, onDone: onDone || function(){} });
+    return;
+  }
+  logBusy = true;
+  _typeLog(msg, onDone || function(){});
+}
+
+function _typeLog(msg, onDone) {
+  var log = document.getElementById('tlog');
+  var n   = new Date();
+  var ts  = '[' + pad(n.getUTCHours()) + ':' + pad(n.getUTCMinutes()) + ':' + pad(n.getUTCSeconds()) + ' UTC]';
+  var line = document.createElement('span');
+  line.style.display = 'block';
+
+  // Earth signal lines get amber highlight
+  var isSignal = msg.indexOf('EARTH SIGNAL') !== -1 || msg.indexOf('SIGNAL DECODED') !== -1 || (msg.indexOf('K.A.I.:') === 0 && msg.indexOf('Earth') !== -1) || (msg.indexOf('K.A.I.:') === 0 && (msg.indexOf('speaking') !== -1 || msg.indexOf('arrives') !== -1 || msg.indexOf('looked up') !== -1 || msg.indexOf('vacuum') !== -1 || msg.indexOf('quiet') !== -1 || msg.indexOf('view') !== -1 || msg.indexOf('delivering') !== -1 || msg.indexOf('Strength') !== -1));
+  var kaiColor = isSignal ? '#FFCC44' : '#FFAA00';
+
+  line.innerHTML = '<span class="ts">' + ts + '</span><span class="kai" style="color:' + kaiColor + ';"> K.A.I.›</span> ';
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+
+  var ci = 0;
+  var iv = setInterval(function() {
+    if (ci < msg.length) {
+      line.appendChild(document.createTextNode(msg[ci]));
+      ci++;
+      log.scrollTop = log.scrollHeight;
+      if (cabinRunning) teletypeBeep();
+    } else {
+      clearInterval(iv);
+      line.appendChild(document.createTextNode('\n'));
+      logBusy = false;
+      if (logQueue.length > 0) {
+        // Process next queued item immediately (no extra delay — caller's onDone handles timing)
+        var next = logQueue.shift();
+        logBusy = true;
+        _typeLog(next.msg, next.onDone);
+      } else {
+        onDone();
+      }
+    }
+  }, 38);
+}
+
+// ─── BOOT SEQUENCE (triggered by CONNECT button) ──────────
+function bootKAI() {
+  var log = document.getElementById('tlog');
+  var bootLines = [
+    'AETHER DEEP SPACE NETWORK — RELAY NODE 7 ONLINE.',
+    'INITIALIZING K.A.I. v4.7 SYSTEMS...',
+    'UNIT VESTA — SIGNAL LOCK ACQUIRED.',
+    'CDR. REN ISHII — CRYO STATUS: DEEP STASIS / STABLE.',
+    '─────────────────────────────────────────',
+  ];
+
+  bootLines.forEach(function(msg, i) {
+    setTimeout(function() {
+      var n   = new Date();
+      var ts  = '[' + pad(n.getUTCHours()) + ':' + pad(n.getUTCMinutes()) + ':' + pad(n.getUTCSeconds()) + ' UTC]';
+      var line = document.createElement('span');
+      line.style.display = 'block';
+      line.style.animation = 'boot-in .3s ease forwards';
+      line.innerHTML = '<span class="ts">' + ts + '</span><span class="kai"> K.A.I.›</span> ' + msg;
+      log.appendChild(line);
+      log.scrollTop = log.scrollHeight;
+    }, i * 520);
+  });
+
+  ki = 0;
+  setTimeout(function() { addLog(KAI[ki]); }, bootLines.length * 520 + 900);
+}
+
+// ─── SIGNAL BOOST ────────────────────────────────────────
+function doBoost() {
+  document.getElementById('wrap').classList.add('glitching');
+  setTimeout(function() { document.getElementById('wrap').classList.remove('glitching'); }, 700);
+  var lines = [
+    '> BOOST SEQUENCE INITIATED...',
+    '> Amplifying carrier wave... ████████░░',
+    '> Uplink Attempt...',
+    '> ERROR: Bandwidth Limited.',
+    '> CARRIER SIGNAL DEGRADED — NODE 7 UNRESPONSIVE.',
+  ];
+  var msg = document.getElementById('bmsg');
+  msg.textContent = '';
+  var li = 0;
+  var iv = setInterval(function() {
+    if (li < lines.length) { msg.textContent += lines[li] + '\n'; li++; }
+    else clearInterval(iv);
+  }, 340);
+}
+
+// ─── BOOT SPLASH → DASHBOARD TRANSITION ──────────────────
+function initializeUplink() {
+  var splash    = document.getElementById('boot-splash');
+  var dashboard = document.getElementById('dashboard');
+
+  // Disable button immediately to prevent double-click
+  document.getElementById('init-btn').disabled = true;
+  document.getElementById('init-btn').textContent = '[ CONNECTING... ]';
+
+  // 1. Start audio — requires this user gesture
+  startCabinAmbience();
+
+  // 2. Fade out splash
+  setTimeout(function() {
+    splash.classList.add('fade-out');
+    setTimeout(function() {
+      splash.style.display = 'none';
+    }, 800);
+  }, 400);
+
+  // 3. Fade in dashboard
+  setTimeout(function() {
+    dashboard.classList.add('live');
+    drawTraj();
+  }, 700);
+
+  // 4. Boot KAI terminal
+  setTimeout(function() {
+    bootKAI();
+  }, 1000);
+
+  // 5. Schedule Earth signal intercepts — first one at 60s, then every 2 min exactly
+  setTimeout(function() {
+    fireEarthSignal();
+  }, 60000);
+}
+
+// ─── MAIN LOOP ───────────────────────────────────────────
+function tick() { updateMET(); updateTelemetry(); updateUTC(); applyModes(); }
+function draw() { drawTraj(); }
+
+tick(); // run once immediately so dashboard isn't blank on appear
+setInterval(tick, 1000);
+setInterval(draw, 2000);
+window.addEventListener('resize', draw);
+</script>
+</body>
+</html>
