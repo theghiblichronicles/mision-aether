@@ -993,54 +993,36 @@ tick(); // run once immediately so dashboard isn't blank on appear
 setInterval(tick, 1000);
 setInterval(draw, 2000);
 window.addEventListener('resize', draw);
-</script>
-    // Earth Sector Intercepted Signals Database
-    const groundSignals = [
-        { user: "@Spiny1", msg: "Good luck and enjoy the view!" },
-        { user: "@mori_8110", msg: "How are things up there? Stay strong, man." }
-    ];
+<script>
+        // Earth Sector Intercepted Signals Database
+        const groundSignals = [
+            { user: "@Spiny1", msg: "Good luck and enjoy the view!" },
+            { user: "@mori_8110", msg: "How are things up there? Stay strong, man." }
+        ];
 
-    function injectSubscriberSignal() {
-        // Target the console container
-        // Note: Ensure '.terminal-body' matches your HTML class name
-        const terminalBody = document.querySelector('.terminal-body'); 
-        
-        if (terminalBody) {
-            const signal = groundSignals[Math.floor(Math.random() * groundSignals.length)];
-            const now = new Date();
-            const timestamp = `${now.getUTCHours().toString().padStart(2, '0')}:${now.getUTCMinutes().toString().padStart(2, '0')}:${now.getUTCSeconds().toString().padStart(2, '0')}`;
+        function injectSubscriberSignal() {
+            const terminalBody = document.querySelector('.terminal-body'); 
             
-            const logEntry = document.createElement('p');
-            
-            // 1. Inherit your existing terminal styles
-            logEntry.className = "terminal-entry"; // Replace with your actual CSS class for log lines
-            
-            // 2. Fine-tune layout
-            logEntry.style.margin = "8px 0";
-            logEntry.style.lineHeight = "1.5";
-            logEntry.style.fontFamily = "monospace"; // Safety fallback
-            
-            // 3. The Content (English - International Signal Style)
-            logEntry.innerHTML = `
-                [${timestamp} UTC] 
-                <span style="color: #ffaa00; font-weight: bold; text-shadow: 0 0 5px rgba(255, 170, 0, 0.5);">SIGNAL INTERCEPTED:</span> 
-                <span style="color: #ffffff; opacity: 0.9;">${signal.user}</span> 
-                <span style="color: #00ff41;">> "${signal.msg}"</span>
-            `;
-            
-            terminalBody.appendChild(logEntry);
-            
-            // Auto-scroll to keep the Commander updated
-            terminalBody.scrollTop = terminalBody.scrollHeight;
+            if (terminalBody) {
+                const signal = groundSignals[Math.floor(Math.random() * groundSignals.length)];
+                const now = new Date();
+                const timestamp = `${now.getUTCHours().toString().padStart(2, '0')}:${now.getUTCMinutes().toString().padStart(2, '0')}:${now.getUTCSeconds().toString().padStart(2, '0')}`;
+                
+                const logEntry = document.createElement('p');
+                logEntry.className = "terminal-entry"; 
+                logEntry.style.margin = "8px 0";
+                logEntry.style.lineHeight = "1.5";
+                
+                logEntry.innerHTML = `[${timestamp} UTC] <span style="color: #ffaa00; font-weight: bold; text-shadow: 0 0 5px rgba(255, 170, 0, 0.5);">SIGNAL INTERCEPTED:</span> <span style="color: #ffffff; opacity: 0.9;">${signal.user}</span> <span style="color: #00ff41;">> "${signal.msg}"</span>`;
+                
+                terminalBody.appendChild(logEntry);
+                terminalBody.scrollTop = terminalBody.scrollHeight;
+            }
         }
-    }
 
-    // Increased frequency: 15 seconds (15000ms)
-    // This ensures visitors see the "magic" before leaving the site
-    setInterval(injectSubscriberSignal, 15000);
-
-    // Optional: Trigger one signal immediately on load
-    setTimeout(injectSubscriberSignal, 2000);
-</script>
+        setInterval(injectSubscriberSignal, 15000);
+        setTimeout(injectSubscriberSignal, 2000);
+    </script>
+</body>
 </body>
 </html>
