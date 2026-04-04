@@ -1247,6 +1247,49 @@ tick(); // run once immediately so dashboard isn't blank on appear
 setInterval(tick, 1000);
 setInterval(draw, 2000);
 window.addEventListener('resize', draw);
+  <script>
+// --- VESTA MISSION ENGINE: SUBSCRIBER SIGNAL INTEGRATION ---
+
+// 1. Earth Sector Intercepted Signals Database
+const groundSignals = [
+    { user: "@Spiny1", msg: "Good luck and enjoy the view!" },
+    { user: "@mori_8110", msg: "How are things up there? Stay strong, man." }
+];
+
+// 2. Integration function with K.A.I. Terminal logic
+function fireEarthSignal() {
+    // We target the log container used in your dashboard (id="tlog")
+    const terminalBody = document.getElementById('tlog'); 
+    
+    if (terminalBody) {
+        const signal = groundSignals[Math.floor(Math.random() * groundSignals.length)];
+        const now = new Date();
+        const timestamp = `[${now.getUTCHours().toString().padStart(2, '0')}:${now.getUTCMinutes().toString().padStart(2, '0')}:${now.getUTCSeconds().toString().padStart(2, '0')} UTC]`;
+        
+        // Create the line element
+        const logEntry = document.createElement('span');
+        logEntry.style.display = 'block';
+        logEntry.style.margin = "8px 0";
+        logEntry.style.fontFamily = "'Share Tech Mono', monospace";
+        
+        // Match your dashboard's terminal style with the Orange Intercept label
+        logEntry.innerHTML = `
+            <span style="color: var(--c2); margin-right: 7px;">${timestamp}</span>
+            <span style="color: #ffaa00; font-weight: bold; text-shadow: 0 0 5px rgba(255, 170, 0, 0.5);"> K.A.I.› SIGNAL INTERCEPTED:</span> 
+            <span style="color: #ffffff; opacity: 0.9;">${signal.user}</span> 
+            <span style="color: #00ff41;">> "${signal.msg}"</span>
+        `;
+        
+        terminalBody.appendChild(logEntry);
+        
+        // Auto-scroll to keep the Commander updated
+        terminalBody.scrollTop = terminalBody.scrollHeight;
+    }
+}
+
+// 3. Force initial signals (Since initializeUplink is looking for this function)
+setTimeout(fireEarthSignal, 5000);  // First one after 5 seconds of boot
+setInterval(fireEarthSignal, 20000); // New signal every 20 seconds
 </script>
 </body>
 </html>
